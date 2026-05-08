@@ -2,10 +2,10 @@
 
 import { Task, TaskStatus } from '@/types/task';
 import { updateTaskStatus } from '@/actions/tasks';
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { Check, Clock, ChevronRight, ListTodo, CircleDashed, CheckCircle2, Timer } from 'lucide-react';
+import { ListTodo, CircleDashed, CheckCircle2, Timer, Clock, ChevronRight, MessageSquareText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Dialog,
@@ -15,6 +15,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 
 interface TaskListProps {
   tasks: Task[];
@@ -23,15 +24,30 @@ interface TaskListProps {
 export function TaskList({ tasks }: TaskListProps) {
   const [isPending, startTransition] = useTransition();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [tempStatus, setTempStatus] = useState<TaskStatus | null>(null);
+  const [comment, setComment] = useState('');
 
-  const onStatusChange = (id: string, status: TaskStatus) => {
+  useEffect(() => {
+    if (selectedTask) {
+      setTempStatus(selectedTask.status);
+      setComment(selectedTask.comentario || '');
+    }
+  }, [selectedTask]);
+
+  const handleStatusUpdate = () => {
+    if (!selectedTask || !tempStatus) return;
+    
     startTransition(async () => {
-      await updateTaskStatus(id, status);
+      await updateTaskStatus(selectedTask.id, tempStatus, tempStatus === 'Parcial' ? comment : undefined);
       setSelectedTask(null);
     });
   };
 
-  const pendingTasks = tasks.filter(t => t.status !== 'Concluída');
+  const onQuickComplete = (id: string, status: TaskStatus) => {
+    startTransition(async () => {
+      await updateTaskStatus(id, status);
+    });
+  };
 
   if (tasks.length === 0) {
     return (
@@ -74,12 +90,12 @@ export function TaskList({ tasks }: TaskListProps) {
           <div className="flex items-center gap-4 flex-1 min-w-0">
              <div 
                className="relative flex items-center justify-center"
-               onClick={(e) => e.stopPropagation()} // Prevent modal when clicking checkbox
+               onClick={(e) => e.stopPropagation()}
              >
                <Checkbox 
                   id={`task-${task.id}`}
                   checked={task.status === 'Concluída'}
-                  onCheckedChange={() => onStatusChange(task.id, 'Concluída')}
+                  onCheckedChange={() => onQuickComplete(task.id, 'Concluída')}
                   disabled={isPending}
                   className="h-8 w-8 md:h-7 md:w-7 rounded-full border-2"
                   aria-label={`Marcar "${task.tarefa}" como concluída`}
@@ -106,6 +122,12 @@ export function TaskList({ tasks }: TaskListProps) {
                          • {task.status}
                       </span>
                    )}
+                   {task.comentario && (
+                     <span className="flex items-center gap-1 text-primary">
+                        <MessageSquareText className="h-3 w-3" />
+                        Comentário
+                     </span>
+                   )}
                 </div>
              </div>
           </div>
@@ -115,7 +137,7 @@ export function TaskList({ tasks }: TaskListProps) {
 
       {/* Modal de Status da Tarefa */}
       <Dialog open={!!selectedTask} onOpenChange={() => setSelectedTask(null)}>
-        <DialogContent className="sm:max-w-[400px] rounded-[2.5rem] p-6 gap-6 border-none shadow-3xl overscroll-behavior-contain">
+        <DialogContent className="sm:max-w-[400px] rounded-[2.5rem] p-6 gap-6 border-none shadow-3xl overscroll-behavior-contain max-h-[95vh] overflow-y-auto">
           <DialogHeader className="space-y-4">
             <div className="bg-primary/5 w-12 h-12 rounded-2xl flex items-center justify-center text-primary">
               <CircleDashed className="h-6 w-6 animate-spin-slow" />
@@ -130,41 +152,58 @@ export function TaskList({ tasks }: TaskListProps) {
             </div>
           </DialogHeader>
 
-          <div className="grid gap-3">
+          <div className="grid gap-2">
             {[
               { id: 'Pendente', icon: Clock, color: 'text-muted-foreground', bg: 'bg-muted/50', label: 'Pendente' },
-              { id: 'Parcial', icon: Timer, color: 'text-orange-500', bg: 'bg-orange-500/10', label: 'Em Andamento (Parcial)' },
+              { id: 'Parcial', icon: Timer, color: 'text-orange-500', bg: 'bg-orange-500/10', label: 'Parcial' },
               { id: 'Concluída', icon: CheckCircle2, color: 'text-green-500', bg: 'bg-green-500/10', label: 'Concluída' },
             ].map((status) => (
               <button
                 key={status.id}
-                onClick={() => selectedTask && onStatusChange(selectedTask.id, status.id as TaskStatus)}
-                disabled={isPending}
+                onClick={() => setTempStatus(status.id as TaskStatus)}
                 className={cn(
                   "flex items-center gap-4 p-4 rounded-2xl border-2 transition-all group/btn text-left",
-                  selectedTask?.status === status.id 
+                  tempStatus === status.id 
                     ? "border-primary bg-primary/5" 
                     : "border-transparent bg-muted/20 hover:border-primary/20 hover:bg-background"
                 )}
               >
-                <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover/btn:scale-110", status.bg, status.color)}>
-                  <status.icon className="h-6 w-6" />
+                <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover/btn:scale-110", status.bg, status.color)}>
+                  <status.icon className="h-5 w-5" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-sm uppercase tracking-widest">{status.label}</p>
-                  <p className="text-xs text-muted-foreground truncate">Toque para selecionar</p>
                 </div>
-                {selectedTask?.status === status.id && (
+                {tempStatus === status.id && (
                   <CheckCircle2 className="h-6 w-6 text-primary" />
                 )}
               </button>
             ))}
           </div>
 
-          <DialogFooter>
+          {tempStatus === 'Parcial' && (
+            <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 px-1">Comentário Do Parcial</label>
+              <Textarea 
+                placeholder="Explique o que foi feito ou o que falta…"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                className="rounded-2xl border-none bg-muted/40 focus-visible:bg-background h-24 font-medium"
+              />
+            </div>
+          )}
+
+          <DialogFooter className="flex flex-col gap-2">
+            <Button 
+              className="w-full h-14 rounded-2xl text-base font-black uppercase tracking-widest shadow-xl shadow-primary/20 transition-transform active:scale-95"
+              onClick={handleStatusUpdate}
+              disabled={isPending || (tempStatus === 'Parcial' && !comment.trim())}
+            >
+              {isPending ? 'Salvando…' : 'Confirmar'}
+            </Button>
             <Button 
               variant="ghost" 
-              className="w-full h-12 rounded-xl font-bold uppercase tracking-widest text-xs opacity-50"
+              className="w-full h-10 rounded-xl font-bold uppercase tracking-widest text-[10px] opacity-50"
               onClick={() => setSelectedTask(null)}
             >
               Cancelar

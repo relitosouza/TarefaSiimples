@@ -13,8 +13,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Task, TaskStatus } from '@/types/task';
 import { getDailyReport, updateTaskStatus } from '@/actions/tasks';
-import { Trophy, Clock, ClipboardList, Coffee, Sparkles, CheckCircle2, Timer, AlertCircle } from 'lucide-react';
+import { Trophy, Clock, ClipboardList, Coffee, Sparkles, CheckCircle2, Timer, AlertCircle, MessageSquarePlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Textarea } from '@/components/ui/textarea';
 
 interface ReportData {
   completedCount: number;
@@ -23,14 +24,16 @@ interface ReportData {
   tasks: Task[];
 }
 
-const REPORT_TIME = 17; // 17:30
+const REPORT_TIME = 17;
 
 export function DailyReportModal() {
   const [open, setOpen] = React.useState(false);
   const [report, setReport] = React.useState<ReportData | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [currentTime, setCurrentTime] = React.useState(new Date().getHours());
-  const [isUpdating, setIsUpdating] = React.useTransition();
+  const [isUpdating, startTransition] = React.useTransition();
+  const [editingTaskId, setEditingTaskId] = React.useState<string | null>(null);
+  const [comment, setComment] = React.useState('');
 
   const fetchReport = React.useCallback(async () => {
     setLoading(true);
@@ -56,10 +59,12 @@ export function DailyReportModal() {
     }
   }, [open, fetchReport]);
 
-  const handleStatusUpdate = (id: string, status: TaskStatus) => {
-    setIsUpdating(async () => {
-      await updateTaskStatus(id, status);
-      fetchReport(); // Refresh report data
+  const handleStatusUpdate = (id: string, status: TaskStatus, taskComment?: string) => {
+    startTransition(async () => {
+      await updateTaskStatus(id, status, taskComment);
+      setEditingTaskId(null);
+      setComment('');
+      fetchReport();
     });
   };
 
@@ -84,7 +89,7 @@ export function DailyReportModal() {
         <div className="bg-primary p-8 text-primary-foreground relative overflow-hidden shrink-0">
            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16" aria-hidden="true" />
            <DialogTitle className="text-3xl md:text-4xl font-black tracking-tighter text-wrap-balance">Resumo De Hoje</DialogTitle>
-           <p id="report-description" className="text-primary-foreground/80 mt-2 font-medium">Finalize suas tarefas e veja seu desempenho.</p>
+           <p id="report-description" className="text-primary-foreground/80 mt-2 font-medium text-pretty">Veja seu progresso e finalize o dia.</p>
         </div>
         
         <div className="p-6 md:p-8 space-y-8 bg-background overflow-y-auto flex-1 custom-scrollbar">
@@ -113,12 +118,12 @@ export function DailyReportModal() {
               <div className="space-y-4">
                 <h3 className="text-xs font-black uppercase tracking-[0.2em] text-primary/60 flex items-center gap-2">
                   <span className="h-1 w-6 bg-primary/20 rounded-full" />
-                  Status Das Tarefas
+                  Revisão De Tarefas
                 </h3>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {report.tasks.map((task) => (
-                    <div key={task.id} className="bg-muted/30 p-4 rounded-2xl border border-transparent hover:border-primary/10 transition-all">
-                      <p className="font-bold text-sm md:text-base mb-3 truncate">{task.tarefa}</p>
+                    <div key={task.id} className="bg-muted/30 p-5 rounded-3xl border border-transparent hover:border-primary/10 transition-all space-y-4">
+                      <p className="font-bold text-sm md:text-base truncate">{task.tarefa}</p>
                       <div className="flex gap-2">
                         {[
                           { id: 'Pendente', icon: Clock, color: 'text-muted-foreground', bg: 'bg-muted/50' },
@@ -127,9 +132,16 @@ export function DailyReportModal() {
                         ].map((s) => (
                           <button
                             key={s.id}
-                            onClick={() => handleStatusUpdate(task.id, s.id as TaskStatus)}
+                            onClick={() => {
+                              if (s.id === 'Parcial') {
+                                setEditingTaskId(task.id);
+                                setComment(task.comentario || '');
+                              } else {
+                                handleStatusUpdate(task.id, s.id as TaskStatus);
+                              }
+                            }}
                             className={cn(
-                              "flex-1 flex flex-col items-center gap-1.5 p-2 rounded-xl border transition-all",
+                              "flex-1 flex flex-col items-center gap-1.5 p-2.5 rounded-2xl border transition-all",
                               task.status === s.id 
                                 ? "bg-background border-primary/20 shadow-sm" 
                                 : "bg-transparent border-transparent opacity-40 hover:opacity-100"
@@ -140,6 +152,32 @@ export function DailyReportModal() {
                           </button>
                         ))}
                       </div>
+
+                      {editingTaskId === task.id && (
+                        <div className="space-y-3 animate-in fade-in slide-in-from-top-2 pt-2">
+                          <Textarea 
+                            placeholder="Descreva o progresso parcial…"
+                            value={comment}
+                            onChange={(e) => setComment(e.target.value)}
+                            className="rounded-2xl border-none bg-background h-20 text-xs font-medium"
+                          />
+                          <Button 
+                            size="sm"
+                            className="w-full rounded-xl h-10 font-black text-[10px] uppercase tracking-widest"
+                            onClick={() => handleStatusUpdate(task.id, 'Parcial', comment)}
+                            disabled={isUpdating || !comment.trim()}
+                          >
+                            {isUpdating ? 'Salvando…' : 'Salvar Comentário'}
+                          </Button>
+                        </div>
+                      )}
+                      
+                      {task.status === 'Parcial' && task.comentario && editingTaskId !== task.id && (
+                        <div className="flex items-start gap-2 bg-background/50 p-3 rounded-xl border border-orange-500/10">
+                           <MessageSquarePlus className="h-3 w-3 text-orange-500 mt-0.5 shrink-0" />
+                           <p className="text-[10px] font-medium text-muted-foreground italic line-clamp-2">{task.comentario}</p>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

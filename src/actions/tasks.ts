@@ -13,11 +13,12 @@ export async function getTasks() {
       id: row.get('ID'),
       tarefa: row.get('Tarefa'),
       status: row.get('Status') as TaskStatus,
+      comentario: row.get('Comentario') || '',
+      data: row.get('Data') || row.get('Data_Criacao')?.split('T')[0] || '',
       data_criacao: row.get('Data_Criacao'),
       data_conclusao: row.get('Data_Conclusao') || '',
     }));
 
-    // Remove duplicatas para o histórico do autocomplete
     const history = Array.from(new Set(tasks.map(t => t.tarefa))).filter(Boolean);
 
     return { tasks, history };
@@ -31,14 +32,18 @@ export async function addTask(tarefa: string) {
   try {
     const sheet = await getSheet();
     const id = crypto.randomUUID();
-    const data_criacao = new Date().toISOString();
+    const now = new Date();
+    const data_criacao = now.toISOString();
+    const data = data_criacao.split('T')[0];
     
     await sheet.addRow({
       ID: id,
       Tarefa: tarefa,
       Status: 'Pendente',
+      Data: data,
       Data_Criacao: data_criacao,
-      Data_Conclusao: ''
+      Data_Conclusao: '',
+      Comentario: ''
     });
 
     revalidatePath('/');
@@ -49,7 +54,7 @@ export async function addTask(tarefa: string) {
   }
 }
 
-export async function updateTaskStatus(id: string, status: TaskStatus) {
+export async function updateTaskStatus(id: string, status: TaskStatus, comentario?: string) {
   try {
     const sheet = await getSheet();
     const rows = await sheet.getRows();
@@ -57,6 +62,9 @@ export async function updateTaskStatus(id: string, status: TaskStatus) {
 
     if (row) {
       row.set('Status', status);
+      if (comentario !== undefined) {
+        row.set('Comentario', comentario);
+      }
       if (status === 'Concluída') {
         row.set('Data_Conclusao', new Date().toISOString());
       } else {
@@ -90,7 +98,7 @@ export async function getDailyReport() {
       completedCount: completedToday.length,
       pendingCount: pending.length,
       partialCount: partial.length,
-      tasks: completedToday
+      tasks: tasks.filter(t => t.data === today)
     };
   } catch (error) {
     console.error('Erro ao gerar relatório:', error);
