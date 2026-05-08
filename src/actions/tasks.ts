@@ -15,6 +15,8 @@ export async function getTasks() {
       status: row.get('Status') as TaskStatus,
       comentario: row.get('Comentario') || '',
       data: row.get('Data') || row.get('Data_Criacao')?.split('T')[0] || '',
+      complexidade: row.get('Complexidade') as any,
+      prioridade: row.get('Prioridade') as any,
       data_criacao: row.get('Data_Criacao'),
       data_conclusao: row.get('Data_Conclusao') || '',
     }));
@@ -28,7 +30,11 @@ export async function getTasks() {
   }
 }
 
-export async function addTask(tarefa: string) {
+export async function addTask(
+  tarefa: string, 
+  complexidade: string = 'Média', 
+  prioridade: string = 'Média'
+) {
   try {
     const sheet = await getSheet();
     const id = crypto.randomUUID();
@@ -43,7 +49,9 @@ export async function addTask(tarefa: string) {
       Data: data,
       Data_Criacao: data_criacao,
       Data_Conclusao: '',
-      Comentario: ''
+      Comentario: '',
+      Complexidade: complexidade,
+      Prioridade: prioridade
     });
 
     revalidatePath('/');

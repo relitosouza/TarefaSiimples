@@ -1,59 +1,75 @@
-import { getTasks } from '@/actions/tasks';
-import { TaskList } from '@/components/TaskList';
 import { AddTaskForm } from '@/components/AddTaskForm';
+import { TaskList } from '@/components/TaskList';
+import { getTasks } from '@/actions/tasks';
 import { DailyReportModal } from '@/components/DailyReportModal';
-import { ModeToggle } from '@/components/mode-toggle';
+import { ProductivityCharts } from '@/components/ProductivityCharts';
+import { BarChart2, CheckCircle2 } from 'lucide-react';
 
 export default async function Home() {
   const { tasks, history } = await getTasks();
+  const pendingTasksCount = tasks.filter(t => t.status !== 'Concluída').length;
 
   return (
-    <div className="min-h-screen bg-background transition-colors duration-500 flex flex-col antialiased">
-      <main className="flex-1 w-full max-w-lg mx-auto px-6 py-12 md:py-24">
-        <header className="flex justify-between items-center mb-12 md:mb-20">
-          <div className="space-y-1">
-            <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-wrap-balance">
-              Tarefa<span className="text-primary italic" translate="no">Simples</span>
-            </h1>
-            <p className="text-muted-foreground text-sm md:text-xl font-medium tracking-tight opacity-70 text-wrap-balance">
-              Sua rotina, organizada e leve.
-            </p>
+    <div className="min-h-screen bg-[#F8F9FA] dark:bg-[#0A0A0A] selection:bg-primary/10 transition-colors">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 space-y-16">
+        
+        {/* Cabeçalho de Boas-vindas */}
+        <header className="flex flex-col items-center text-center space-y-4">
+          <div className="inline-flex items-center gap-2 bg-primary/5 px-4 py-2 rounded-full border border-primary/10">
+            <CheckCircle2 className="h-4 w-4 text-primary" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-primary">Sistema TarefaSimples</span>
           </div>
-          <ModeToggle />
+          <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-balance leading-[0.9]">
+            Organize sua rotina com <span className="text-primary italic">precisão.</span>
+          </h1>
+          <p className="text-muted-foreground text-sm md:text-lg max-w-2xl font-medium">
+            Gerencie tarefas complexas de forma minimalista. Sincronizado com Google Sheets.
+          </p>
         </header>
 
-        <section className="mb-16 md:mb-24 relative z-50" aria-labelledby="add-task-heading">
-           <h2 id="add-task-heading" className="sr-only">Adicionar Nova Tarefa</h2>
-           <AddTaskForm history={history} />
+        {/* Input Principal */}
+        <section className="max-w-4xl mx-auto w-full">
+          <AddTaskForm history={history} />
         </section>
 
-        <section className="space-y-8 pb-32" aria-labelledby="tasks-heading">
-          <div className="flex items-end justify-between px-2">
-            <div>
-              <h2 id="tasks-heading" className="text-2xl md:text-4xl font-black tracking-tight text-wrap-balance">Tarefas</h2>
-              <p className="text-xs md:text-base text-muted-foreground mt-1 font-medium">
-                {tasks.filter(t => t.status !== 'Concluída').length} pendências para agora
-              </p>
-            </div>
-            <div className="flex items-center gap-2 text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] text-primary/60 bg-primary/5 px-4 py-2 rounded-2xl border border-primary/10 select-none" aria-label="Status de sincronização">
-               <span className="h-2 w-2 rounded-full bg-primary animate-pulse" aria-hidden="true" />
-               Sheets Live
-            </div>
-          </div>
+        {/* Layout Grid: Tarefas + Gráficos */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 pt-8">
           
-          <TaskList tasks={tasks} />
-        </section>
+          {/* Coluna da Esquerda: Lista de Tarefas */}
+          <section className="lg:col-span-8 space-y-8" aria-labelledby="tasks-heading">
+            <div className="flex items-end justify-between px-2">
+              <div>
+                <h2 id="tasks-heading" className="text-2xl md:text-4xl font-black tracking-tight">Minhas Tarefas</h2>
+                <p className="text-xs md:text-base text-muted-foreground mt-1 font-medium">
+                  {pendingTasksCount} {pendingTasksCount === 1 ? 'item pendente' : 'itens pendentes'} hoje
+                </p>
+              </div>
+            </div>
+            <TaskList tasks={tasks} />
+          </section>
 
+          {/* Coluna da Direita: Produtividade */}
+          <aside className="lg:col-span-4 space-y-8">
+            <div className="flex items-center gap-3 px-2">
+               <div className="bg-orange-500/10 p-2 rounded-xl">
+                 <BarChart2 className="h-5 w-5 text-orange-500" />
+               </div>
+               <h2 className="text-xl md:text-2xl font-black tracking-tight">Produtividade</h2>
+            </div>
+            <div className="sticky top-8">
+              <ProductivityCharts tasks={tasks} />
+            </div>
+          </aside>
+        </div>
+
+        {/* Componentes Flutuantes */}
         <DailyReportModal />
       </main>
 
-      <footer className="py-12 border-t bg-muted/10 backdrop-blur-sm mt-auto">
-        <div className="max-w-lg mx-auto px-6 flex flex-col items-center gap-4">
-          <div className="h-1.5 w-12 bg-primary/20 rounded-full" aria-hidden="true" />
-          <p className="text-[10px] md:text-xs text-muted-foreground font-black uppercase tracking-[0.3em] opacity-40">
-            TarefaSimples &copy; {new Date().getFullYear()}
-          </p>
-        </div>
+      <footer className="py-12 border-t border-primary/5 text-center">
+        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/30">
+          TarefaSimples &bull; © 2026
+        </p>
       </footer>
     </div>
   );
