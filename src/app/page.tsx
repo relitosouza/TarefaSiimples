@@ -30,7 +30,7 @@ export default async function Home() {
         <section className="space-y-8 pb-32" aria-labelledby="tasks-heading">
           <div className="flex items-end justify-between px-2">
             <div>
-              <h2 id="tasks-heading" className="text-2xl md:text-4xl font-black tracking-tight text-wrap-balance">Afazeres</h2>
+              <h2 id="tasks-heading" className="text-2xl md:text-4xl font-black tracking-tight text-wrap-balance">Tarefas</h2>
               <p className="text-xs md:text-base text-muted-foreground mt-1 font-medium">
                 {tasks.filter(t => t.status !== 'Concluída').length} pendências para agora
               </p>
