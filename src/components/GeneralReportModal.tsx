@@ -13,8 +13,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Task } from '@/types/task';
-import { 
-  ClipboardList, CheckCircle2, Clock, Timer, AlertTriangle, 
+import {
+  ClipboardList, CheckCircle2, Clock, Timer, AlertTriangle,
   Copy, Printer, Search, Calendar, CheckCircle, TrendingUp, Info
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -43,12 +43,14 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
   // 2. Timer de abertura automática às 17h30 (Relatório de Fim de Dia)
   const REPORT_TIME = 15;
   React.useEffect(() => {
-    const timer = setInterval(() => {
+    const check = () => {
       const now = new Date();
-      if (now.getHours() === REPORT_TIME && now.getMinutes() === 20 && !open) {
+      if (now.getHours() === REPORT_TIME && now.getMinutes() === 25 && !open) {
         setOpen(true);
       }
-    }, 60000);
+    };
+    check();
+    const timer = setInterval(check, 10000);
     return () => clearInterval(timer);
   }, [open]);
 
@@ -57,11 +59,11 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
   const completedTasks = tasks.filter(t => t.status === 'Concluída');
   const pendingTasks = tasks.filter(t => t.status === 'Pendente');
   const partialTasks = tasks.filter(t => t.status === 'Parcial');
-  
+
   const completedCount = completedTasks.length;
   const pendingCount = pendingTasks.length;
   const partialCount = partialTasks.length;
-  
+
   const activeTasksCount = pendingCount + partialCount;
   const completionRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
@@ -112,7 +114,7 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
       const now = new Date();
       const diffTime = Math.abs(now.getTime() - created.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
+
       if (diffDays === 0) return 'Criada hoje';
       if (diffDays === 1) return 'Criada há 1 dia';
       return `Criada há ${diffDays} dias`;
@@ -128,7 +130,7 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
       const end = new Date(endString);
       const diffTime = Math.abs(end.getTime() - start.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
+
       if (diffDays === 0) return 'Concluída no mesmo dia';
       if (diffDays === 1) return 'Concluída em 1 dia';
       return `Concluída em ${diffDays} dias`;
@@ -154,7 +156,7 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
     reportText += `------------------------------------------------------------\n`;
     reportText += `Gerado em: ${today}\n`;
     reportText += `------------------------------------------------------------\n\n`;
-    
+
     reportText += `📊 MÉTRICAS DE DESEMPENHO:\n`;
     reportText += `  • Total de Tarefas: ${totalCount}\n`;
     reportText += `  • Concluídas: ${completedCount} (${completionRate}% de taxa de conclusão)\n`;
@@ -179,7 +181,7 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
         const elapsed = t.data_criacao ? `Criada: ${getTimeElapsed(t.data_criacao)}` : '';
         const status = t.status === 'Parcial' ? '[EM PROGRESSO] ' : '[PENDENTE] ';
         const assignee = t.responsavel ? ` | • Responsável: ${t.responsavel}` : '';
-        
+
         reportText += `[${i + 1}] ${status}${priority} ${t.tarefa}\n`;
         reportText += `    • ${complexity} | • ${elapsed}${assignee}\n`;
         if (t.comentario) {
@@ -244,32 +246,32 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
           </thead>
           <tbody>
             ${pendingAndPartial.map((t, idx) => {
-              const priorityColors: Record<string, string> = {
-                'Urgente': 'background: #FEE2E2; color: #991B1B;',
-                'Alta': 'background: #FFEDD5; color: #9A3412;',
-                'Média': 'background: #DBEAFE; color: #1E40AF;',
-                'Baixa': 'background: #F1F5F9; color: #334155;'
-              };
-              const prioStyle = priorityColors[t.prioridade || 'Média'] || priorityColors['Média'];
-              
-              const compColors: Record<string, string> = {
-                'Alta': 'background: #FAF5FF; color: #6B21A8; border: 1px solid #E9D5FF;',
-                'Média': 'background: #F0FDF4; color: #166534; border: 1px solid #BBF7D0;',
-                'Baixa': 'background: #F2F4F7; color: #344054; border: 1px solid #E4E7EC;'
-              };
-              const compStyle = compColors[t.complexidade || 'Média'] || compColors['Média'];
-              
-              const statusLabel = t.status === 'Parcial' ? 'Em Progresso' : 'Pendente';
-              const statusBg = t.status === 'Parcial' ? 'background: #FEF3C7; color: #92400E;' : 'background: #F1F5F9; color: #475569;';
+        const priorityColors: Record<string, string> = {
+          'Urgente': 'background: #FEE2E2; color: #991B1B;',
+          'Alta': 'background: #FFEDD5; color: #9A3412;',
+          'Média': 'background: #DBEAFE; color: #1E40AF;',
+          'Baixa': 'background: #F1F5F9; color: #334155;'
+        };
+        const prioStyle = priorityColors[t.prioridade || 'Média'] || priorityColors['Média'];
 
-              const nameStyles: Record<string, string> = {
-                'Amanda': 'background: #F3E8FF; color: #6B21A8; border: 1px solid #E9D5FF;',
-                'Bárbara': 'background: #FCE7F3; color: #9D174D; border: 1px solid #FBCFE8;',
-                'Daisy': 'background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A;'
-              };
-              const nameStyle = t.responsavel ? (nameStyles[t.responsavel] || 'background: #F1F5F9; color: #475569;') : 'background: transparent; color: #94A3B8;';
+        const compColors: Record<string, string> = {
+          'Alta': 'background: #FAF5FF; color: #6B21A8; border: 1px solid #E9D5FF;',
+          'Média': 'background: #F0FDF4; color: #166534; border: 1px solid #BBF7D0;',
+          'Baixa': 'background: #F2F4F7; color: #344054; border: 1px solid #E4E7EC;'
+        };
+        const compStyle = compColors[t.complexidade || 'Média'] || compColors['Média'];
 
-              return `
+        const statusLabel = t.status === 'Parcial' ? 'Em Progresso' : 'Pendente';
+        const statusBg = t.status === 'Parcial' ? 'background: #FEF3C7; color: #92400E;' : 'background: #F1F5F9; color: #475569;';
+
+        const nameStyles: Record<string, string> = {
+          'Amanda': 'background: #F3E8FF; color: #6B21A8; border: 1px solid #E9D5FF;',
+          'Bárbara': 'background: #FCE7F3; color: #9D174D; border: 1px solid #FBCFE8;',
+          'Daisy': 'background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A;'
+        };
+        const nameStyle = t.responsavel ? (nameStyles[t.responsavel] || 'background: #F1F5F9; color: #475569;') : 'background: transparent; color: #94A3B8;';
+
+        return `
                 <tr style="border-bottom: 1px solid #F1F5F9;">
                   <td style="padding: 12px 10px; font-size: 13px; color: #64748B; font-weight: bold;">#${idx + 1}</td>
                   <td style="padding: 12px 10px; font-size: 13px; font-weight: 600; color: #0F172A;">
@@ -291,7 +293,7 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
                   <td style="padding: 12px 10px; text-align: right; font-size: 12px; color: #64748B;">${t.data_criacao ? formatDate(t.data_criacao) : formatDate(t.data)}</td>
                 </tr>
               `;
-            }).join('')}
+      }).join('')}
           </tbody>
         </table>
       `;
@@ -315,23 +317,23 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
           </thead>
           <tbody>
             ${completedTasks.map((t, idx) => {
-              const priorityColors: Record<string, string> = {
-                'Urgente': 'background: #FEE2E2; color: #991B1B;',
-                'Alta': 'background: #FFEDD5; color: #9A3412;',
-                'Média': 'background: #DBEAFE; color: #1E40AF;',
-                'Baixa': 'background: #F1F5F9; color: #334155;'
-              };
-              const prioStyle = priorityColors[t.prioridade || 'Média'] || priorityColors['Média'];
-              const duration = t.data_criacao && t.data_conclusao ? getCompletionDuration(t.data_criacao, t.data_conclusao) : 'Mesmo dia';
+        const priorityColors: Record<string, string> = {
+          'Urgente': 'background: #FEE2E2; color: #991B1B;',
+          'Alta': 'background: #FFEDD5; color: #9A3412;',
+          'Média': 'background: #DBEAFE; color: #1E40AF;',
+          'Baixa': 'background: #F1F5F9; color: #334155;'
+        };
+        const prioStyle = priorityColors[t.prioridade || 'Média'] || priorityColors['Média'];
+        const duration = t.data_criacao && t.data_conclusao ? getCompletionDuration(t.data_criacao, t.data_conclusao) : 'Mesmo dia';
 
-              const nameStyles: Record<string, string> = {
-                'Amanda': 'background: #F3E8FF; color: #6B21A8; border: 1px solid #E9D5FF;',
-                'Bárbara': 'background: #FCE7F3; color: #9D174D; border: 1px solid #FBCFE8;',
-                'Daisy': 'background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A;'
-              };
-              const nameStyle = t.responsavel ? (nameStyles[t.responsavel] || 'background: #F1F5F9; color: #475569;') : 'background: transparent; color: #94A3B8;';
+        const nameStyles: Record<string, string> = {
+          'Amanda': 'background: #F3E8FF; color: #6B21A8; border: 1px solid #E9D5FF;',
+          'Bárbara': 'background: #FCE7F3; color: #9D174D; border: 1px solid #FBCFE8;',
+          'Daisy': 'background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A;'
+        };
+        const nameStyle = t.responsavel ? (nameStyles[t.responsavel] || 'background: #F1F5F9; color: #475569;') : 'background: transparent; color: #94A3B8;';
 
-              return `
+        return `
                 <tr style="border-bottom: 1px solid #F1F5F9;">
                   <td style="padding: 12px 10px; font-size: 13px; color: #64748B; font-weight: bold;">#${idx + 1}</td>
                   <td style="padding: 12px 10px; font-size: 13px; font-weight: 600; color: #0F172A; text-decoration: line-through; opacity: 0.7;">${t.tarefa}</td>
@@ -345,7 +347,7 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
                   <td style="padding: 12px 10px; text-align: right; font-size: 12px; color: #64748B;">${t.data_conclusao ? formatDate(t.data_conclusao) : formatDate(t.data)}</td>
                 </tr>
               `;
-            }).join('')}
+      }).join('')}
           </tbody>
         </table>
       `;
@@ -477,7 +479,7 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
       doc.open();
       doc.write(reportHtml);
       doc.close();
-      
+
       // Allow fonts and styles to load, then print
       setTimeout(() => {
         iframe.contentWindow?.focus();
@@ -490,8 +492,8 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
   const filteredPending = React.useMemo(() => {
     const weights: Record<string, number> = { 'Urgente': 4, 'Alta': 3, 'Média': 2, 'Baixa': 1 };
     return tasks
-      .filter(t => 
-        t.status !== 'Concluída' && 
+      .filter(t =>
+        t.status !== 'Concluída' &&
         t.tarefa.toLowerCase().includes(searchQuery.toLowerCase())
       )
       .sort((a, b) => {
@@ -507,8 +509,8 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
   const filteredCompleted = React.useMemo(() => {
     const weights: Record<string, number> = { 'Urgente': 4, 'Alta': 3, 'Média': 2, 'Baixa': 1 };
     return tasks
-      .filter(t => 
-        t.status === 'Concluída' && 
+      .filter(t =>
+        t.status === 'Concluída' &&
         t.tarefa.toLowerCase().includes(searchQuery.toLowerCase())
       )
       .sort((a, b) => {
@@ -523,15 +525,15 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button 
-          className="fixed bottom-6 right-6 h-14 md:h-16 px-6 md:px-8 rounded-full shadow-2xl shadow-primary/40 animate-bounce hover:animate-none group z-40 transition-transform active:scale-95 flex items-center gap-2"
-          aria-label="Abrir Relatório Geral"
-        />}>
-          <ClipboardList className="h-5 w-5 md:h-6 md:w-6 transition-transform group-hover:rotate-12" />
-          <span className="font-black text-xs md:text-sm uppercase tracking-widest">Relatório Geral</span>
+      <DialogTrigger render={<Button
+        className="fixed bottom-6 right-6 h-14 md:h-16 px-6 md:px-8 rounded-full shadow-2xl shadow-primary/40 animate-bounce hover:animate-none group z-40 transition-transform active:scale-95 flex items-center gap-2"
+        aria-label="Abrir Relatório Geral"
+      />}>
+        <ClipboardList className="h-5 w-5 md:h-6 md:w-6 transition-transform group-hover:rotate-12" />
+        <span className="font-black text-xs md:text-sm uppercase tracking-widest">Relatório Geral</span>
       </DialogTrigger>
 
-      <DialogContent 
+      <DialogContent
         className="sm:max-w-3xl rounded-[2.5rem] p-0 overflow-hidden border-none shadow-3xl overscroll-behavior-contain flex flex-col h-[90vh] max-h-[850px]"
         aria-describedby="general-report-description"
       >
@@ -546,17 +548,17 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Button 
+              <Button
                 onClick={handleCopyReport}
-                variant="ghost" 
+                variant="ghost"
                 className="h-10 px-4 rounded-xl border border-white/10 hover:bg-white/10 hover:text-white font-bold text-xs uppercase tracking-wider gap-1.5"
               >
                 <Copy className="h-3.5 w-3.5" />
                 {copied ? 'Copiado!' : 'Copiar'}
               </Button>
-              <Button 
+              <Button
                 onClick={handlePrint}
-                variant="ghost" 
+                variant="ghost"
                 className="h-10 px-4 rounded-xl border border-white/10 hover:bg-white/10 hover:text-white font-bold text-xs uppercase tracking-wider gap-1.5"
               >
                 <Printer className="h-3.5 w-3.5" />
@@ -577,8 +579,8 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
                 onClick={() => setActiveTab(tab.id as any)}
                 className={cn(
                   "px-4 py-2.5 font-black text-xs md:text-sm uppercase tracking-wider border-b-2 transition-all relative",
-                  activeTab === tab.id 
-                    ? "border-primary text-white font-black" 
+                  activeTab === tab.id
+                    ? "border-primary text-white font-black"
                     : "border-transparent text-slate-400 hover:text-slate-200"
                 )}
               >
@@ -598,7 +600,7 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
         <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-[#F8F9FA] dark:bg-[#0E0E0E]">
           {/* Printable Container */}
           <div id="printable-report-area">
-            
+
             {/* 1. ABA RESUMO */}
             {activeTab === 'resumo' && (
               <div className="space-y-8 animate-in fade-in duration-300">
@@ -609,7 +611,7 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
                     <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Total de Tarefas</p>
                     <p className="text-4xl font-black tracking-tighter text-foreground">{totalCount}</p>
                   </div>
-                  
+
                   <div className="bg-card p-5 rounded-[2rem] border border-primary/5 shadow-sm space-y-2 relative overflow-hidden">
                     <div className="h-2 w-2 rounded-full bg-green-500 absolute top-4 right-4" />
                     <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground font-semibold">Concluídas</p>
@@ -631,7 +633,7 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
 
                 {/* Grid de Detalhes de Progresso e Métricas */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                  
+
                   {/* Taxa de Conclusão */}
                   <div className="lg:col-span-7 bg-card p-6 rounded-[2.5rem] border border-primary/5 shadow-sm flex flex-col justify-between gap-6">
                     <div className="space-y-1">
@@ -648,7 +650,7 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
                         <span className="text-xs font-bold text-muted-foreground">{completedCount} de {totalCount} concluídas</span>
                       </div>
                       <div className="h-3 w-full bg-muted rounded-full overflow-hidden">
-                        <div 
+                        <div
                           className="h-full bg-gradient-to-r from-green-500 to-emerald-400 rounded-full transition-all duration-1000"
                           style={{ width: `${completionRate}%` }}
                         />
@@ -687,7 +689,7 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
                     <AlertTriangle className="h-4 w-4 text-orange-500" />
                     Distribuição por Prioridade
                   </h4>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     {[
                       { id: 'Urgente', color: 'bg-red-500', count: priorityStats.Urgente, text: 'text-red-500' },
@@ -722,7 +724,7 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
                       Você possui <span className="text-white font-bold">{activeTasksCount} tarefas ativas</span> precisando de atenção. {completedCount > 0 ? `Excelente trabalho na conclusão das outras ${completedCount}!` : 'Dê o primeiro passo e conclua uma tarefa hoje!'}
                     </p>
                   </div>
-                  <Button 
+                  <Button
                     onClick={() => setActiveTab('pendentes')}
                     className="bg-white hover:bg-slate-100 text-slate-900 rounded-2xl font-black text-xs uppercase tracking-wider h-11 px-5 w-fit"
                   >
@@ -757,8 +759,8 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
                     </div>
                   ) : (
                     filteredPending.map((task) => (
-                      <div 
-                        key={task.id} 
+                      <div
+                        key={task.id}
                         className={cn(
                           "bg-card p-5 rounded-[2rem] border border-primary/5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:border-primary/20",
                           task.status === 'Parcial' && "border-l-4 border-l-orange-500"
@@ -773,7 +775,7 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
                               </span>
                             )}
                           </div>
-                          
+
                           <div className="flex items-center gap-3 text-[10px] md:text-xs font-black text-muted-foreground/50 uppercase tracking-[0.15em] flex-wrap">
                             <span className="flex items-center gap-1">
                               <Calendar className="h-3.5 w-3.5" />
@@ -781,7 +783,7 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
                             </span>
                             <span>•</span>
                             <span className="text-primary/60">{getTimeElapsed(task.data_criacao || task.data)}</span>
-                            
+
                             {task.prioridade && (
                               <>
                                 <span>•</span>
@@ -843,19 +845,19 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
                     </div>
                   ) : (
                     filteredCompleted.map((task) => (
-                      <div 
-                        key={task.id} 
+                      <div
+                        key={task.id}
                         className="bg-card p-5 rounded-[2rem] border border-primary/5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:border-primary/20 opacity-90"
                       >
                         <div className="space-y-2 flex-1 min-w-0">
                           <p className="font-bold text-lg text-foreground line-through opacity-60 truncate">{task.tarefa}</p>
-                          
+
                           <div className="flex items-center gap-3 text-[10px] md:text-xs font-black text-muted-foreground/50 uppercase tracking-[0.15em] flex-wrap">
                             <span className="flex items-center gap-1 text-green-600">
                               <CheckCircle2 className="h-3.5 w-3.5" />
                               Concluída em {task.data_conclusao ? formatDate(task.data_conclusao) : formatDate(task.data)}
                             </span>
-                            
+
                             {task.data_criacao && task.data_conclusao && (
                               <>
                                 <span>•</span>
@@ -890,8 +892,8 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
         </div>
 
         <DialogFooter className="p-6 md:p-8 border-t bg-muted/10 shrink-0">
-          <Button 
-            type="button" 
+          <Button
+            type="button"
             className="w-full h-14 rounded-2xl text-base font-black uppercase tracking-widest shadow-xl shadow-primary/20 transition-transform active:scale-95"
             onClick={() => setOpen(false)}
           >
