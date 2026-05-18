@@ -41,11 +41,11 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
   }, []);
 
   // 2. Timer de abertura automática às 17h30 (Relatório de Fim de Dia)
-  const REPORT_TIME = 17;
+  const REPORT_TIME = 15;
   React.useEffect(() => {
     const timer = setInterval(() => {
       const now = new Date();
-      if (now.getHours() === REPORT_TIME && now.getMinutes() === 30 && !open) {
+      if (now.getHours() === REPORT_TIME && now.getMinutes() === 20 && !open) {
         setOpen(true);
       }
     }, 60000);
