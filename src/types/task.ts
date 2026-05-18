@@ -8,6 +8,8 @@ export interface Task {
   data: string;
   complexidade?: 'Baixa' | 'Média' | 'Alta';
   prioridade?: 'Baixa' | 'Média' | 'Alta' | 'Urgente';
+  responsavel?: 'Amanda' | 'Barbara' | 'Dayse' | '';
   data_criacao: string;
   data_conclusao?: string;
 }
+

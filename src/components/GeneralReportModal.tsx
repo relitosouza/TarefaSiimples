@@ -178,9 +178,10 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
         const complexity = t.complexidade ? `Complexidade: ${t.complexidade}` : 'Complexidade: Média';
         const elapsed = t.data_criacao ? `Criada: ${getTimeElapsed(t.data_criacao)}` : '';
         const status = t.status === 'Parcial' ? '[EM PROGRESSO] ' : '[PENDENTE] ';
+        const assignee = t.responsavel ? ` | • Responsável: ${t.responsavel}` : '';
         
         reportText += `[${i + 1}] ${status}${priority} ${t.tarefa}\n`;
-        reportText += `    • ${complexity} | • ${elapsed}\n`;
+        reportText += `    • ${complexity} | • ${elapsed}${assignee}\n`;
         if (t.comentario) {
           reportText += `    ↳ Nota Interna: "${t.comentario}"\n`;
         }
@@ -196,8 +197,9 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
       completedTasks.forEach((t, i) => {
         const duration = t.data_criacao && t.data_conclusao ? `Duração: ${getCompletionDuration(t.data_criacao, t.data_conclusao)}` : 'Duração: Mesmo dia';
         const dateStr = t.data_conclusao ? formatDate(t.data_conclusao) : formatDate(t.data);
+        const assignee = t.responsavel ? ` | • Responsável: ${t.responsavel}` : '';
         reportText += `[${i + 1}] ${t.tarefa}\n`;
-        reportText += `    • Concluída em: ${dateStr} | • ${duration}\n`;
+        reportText += `    • Concluída em: ${dateStr} | • ${duration}${assignee}\n`;
         reportText += `------------------------------------------------------------\n`;
       });
       reportText += `\n`;
@@ -236,6 +238,7 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
               <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; text-align: center; width: 100px;">Status</th>
               <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; text-align: center; width: 100px;">Prioridade</th>
               <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; text-align: center; width: 100px;">Complexidade</th>
+              <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; text-align: center; width: 110px;">Responsável</th>
               <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; text-align: right; width: 120px;">Criada em</th>
             </tr>
           </thead>
@@ -259,6 +262,13 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
               const statusLabel = t.status === 'Parcial' ? 'Em Progresso' : 'Pendente';
               const statusBg = t.status === 'Parcial' ? 'background: #FEF3C7; color: #92400E;' : 'background: #F1F5F9; color: #475569;';
 
+              const nameStyles: Record<string, string> = {
+                'Amanda': 'background: #F3E8FF; color: #6B21A8; border: 1px solid #E9D5FF;',
+                'Barbara': 'background: #FCE7F3; color: #9D174D; border: 1px solid #FBCFE8;',
+                'Dayse': 'background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A;'
+              };
+              const nameStyle = t.responsavel ? (nameStyles[t.responsavel] || 'background: #F1F5F9; color: #475569;') : 'background: transparent; color: #94A3B8;';
+
               return `
                 <tr style="border-bottom: 1px solid #F1F5F9;">
                   <td style="padding: 12px 10px; font-size: 13px; color: #64748B; font-weight: bold;">#${idx + 1}</td>
@@ -274,6 +284,9 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
                   </td>
                   <td style="padding: 12px 10px; text-align: center;">
                     <span style="display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; ${compStyle}">${t.complexidade || 'Média'}</span>
+                  </td>
+                  <td style="padding: 12px 10px; text-align: center;">
+                    <span style="display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; ${nameStyle}">${t.responsavel || '-'}</span>
                   </td>
                   <td style="padding: 12px 10px; text-align: right; font-size: 12px; color: #64748B;">${t.data_criacao ? formatDate(t.data_criacao) : formatDate(t.data)}</td>
                 </tr>
@@ -296,6 +309,7 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
               <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase;">Tarefa</th>
               <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; text-align: center; width: 100px;">Prioridade</th>
               <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; text-align: center; width: 120px;">Duração</th>
+              <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; text-align: center; width: 110px;">Responsável</th>
               <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; text-align: right; width: 150px;">Concluída em</th>
             </tr>
           </thead>
@@ -310,6 +324,13 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
               const prioStyle = priorityColors[t.prioridade || 'Média'] || priorityColors['Média'];
               const duration = t.data_criacao && t.data_conclusao ? getCompletionDuration(t.data_criacao, t.data_conclusao) : 'Mesmo dia';
 
+              const nameStyles: Record<string, string> = {
+                'Amanda': 'background: #F3E8FF; color: #6B21A8; border: 1px solid #E9D5FF;',
+                'Barbara': 'background: #FCE7F3; color: #9D174D; border: 1px solid #FBCFE8;',
+                'Dayse': 'background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A;'
+              };
+              const nameStyle = t.responsavel ? (nameStyles[t.responsavel] || 'background: #F1F5F9; color: #475569;') : 'background: transparent; color: #94A3B8;';
+
               return `
                 <tr style="border-bottom: 1px solid #F1F5F9;">
                   <td style="padding: 12px 10px; font-size: 13px; color: #64748B; font-weight: bold;">#${idx + 1}</td>
@@ -318,6 +339,9 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
                     <span style="display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; ${prioStyle}">${t.prioridade || 'Média'}</span>
                   </td>
                   <td style="padding: 12px 10px; text-align: center; font-size: 12px; font-weight: bold; color: #166534;">${duration}</td>
+                  <td style="padding: 12px 10px; text-align: center;">
+                    <span style="display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; ${nameStyle}">${t.responsavel || '-'}</span>
+                  </td>
                   <td style="padding: 12px 10px; text-align: right; font-size: 12px; color: #64748B;">${t.data_conclusao ? formatDate(t.data_conclusao) : formatDate(t.data)}</td>
                 </tr>
               `;

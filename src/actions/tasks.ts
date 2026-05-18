@@ -17,6 +17,7 @@ export async function getTasks() {
       data: row.get('Data') || row.get('Data_Criacao')?.split('T')[0] || '',
       complexidade: row.get('Complexidade') as any,
       prioridade: row.get('Prioridade') as any,
+      responsavel: row.get('Responsavel') || '',
       data_criacao: row.get('Data_Criacao'),
       data_conclusao: row.get('Data_Conclusao') || '',
     }));
@@ -33,7 +34,8 @@ export async function getTasks() {
 export async function addTask(
   tarefa: string, 
   complexidade: string = 'Média', 
-  prioridade: string = 'Média'
+  prioridade: string = 'Média',
+  responsavel: string = ''
 ) {
   try {
     const sheet = await getSheet();
@@ -51,7 +53,8 @@ export async function addTask(
       Data_Conclusao: '',
       Comentario: '',
       Complexidade: complexidade,
-      Prioridade: prioridade
+      Prioridade: prioridade,
+      Responsavel: responsavel
     });
 
     revalidatePath('/');
@@ -88,6 +91,66 @@ export async function updateTaskStatus(id: string, status: TaskStatus, comentari
     return { success: false, error: 'Falha ao atualizar tarefa' };
   }
 }
+
+export async function updateTask(
+  id: string,
+  updates: {
+    tarefa?: string;
+    prioridade?: 'Urgente' | 'Alta' | 'Média' | 'Baixa';
+    complexidade?: 'Alta' | 'Média' | 'Baixa';
+    comentario?: string;
+    status?: TaskStatus;
+    responsavel?: 'Amanda' | 'Barbara' | 'Dayse' | '';
+  }
+) {
+  try {
+    const sheet = await getSheet();
+    const rows = await sheet.getRows();
+    const row = rows.find(r => r.get('ID') === id);
+
+    if (row) {
+      if (updates.tarefa !== undefined) row.set('Tarefa', updates.tarefa);
+      if (updates.prioridade !== undefined) row.set('Prioridade', updates.prioridade);
+      if (updates.complexidade !== undefined) row.set('Complexidade', updates.complexidade);
+      if (updates.comentario !== undefined) row.set('Comentario', updates.comentario);
+      if (updates.responsavel !== undefined) row.set('Responsavel', updates.responsavel);
+      if (updates.status !== undefined) {
+        row.set('Status', updates.status);
+        if (updates.status === 'Concluída') {
+          row.set('Data_Conclusao', new Date().toISOString());
+        } else {
+          row.set('Data_Conclusao', '');
+        }
+      }
+      await row.save();
+      revalidatePath('/');
+      return { success: true };
+    }
+    return { success: false, error: 'Tarefa não encontrada' };
+  } catch (error) {
+    console.error('Erro ao editar tarefa:', error);
+    return { success: false, error: 'Falha ao editar tarefa' };
+  }
+}
+
+export async function deleteTask(id: string) {
+  try {
+    const sheet = await getSheet();
+    const rows = await sheet.getRows();
+    const row = rows.find(r => r.get('ID') === id);
+
+    if (row) {
+      await row.delete();
+      revalidatePath('/');
+      return { success: true };
+    }
+    return { success: false, error: 'Tarefa não encontrada' };
+  } catch (error) {
+    console.error('Erro ao deletar tarefa:', error);
+    return { success: false, error: 'Falha ao deletar tarefa' };
+  }
+}
+
 
 export async function getDailyReport() {
   try {

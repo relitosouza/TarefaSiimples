@@ -24,12 +24,29 @@ export const getSheet = async (title: string = 'Tarefas') => {
   const doc = await getDoc();
   let sheet = doc.sheetsByTitle[title];
   
+  const headers = ['ID', 'Tarefa', 'Status', 'Data_Criacao', 'Data_Conclusao', 'Comentario', 'Complexidade', 'Prioridade', 'Responsavel'];
+  
   if (!sheet) {
-    // Se a aba não existir, cria uma com os cabeçalhos padrão
+    // Se a aba não existir, cria uma com os cabeçalhos completos
     sheet = await doc.addSheet({ 
       title, 
-      headerValues: ['ID', 'Tarefa', 'Status', 'Data_Criacao', 'Data_Conclusao'] 
+      headerValues: headers 
     });
+  } else {
+    // Garante que todos os cabeçalhos necessários existam no cabeçalho atual da planilha
+    try {
+      await sheet.loadHeaderRow();
+      const currentHeaders = sheet.headerValues;
+      const needsUpdate = headers.some(h => !currentHeaders.includes(h));
+      if (needsUpdate) {
+        // Une cabeçalhos existentes com os novos para não perder nenhuma coluna
+        const mergedHeaders = Array.from(new Set([...currentHeaders, ...headers]));
+        await sheet.setHeaderRow(mergedHeaders);
+      }
+    } catch {
+      // Se não houver cabeçalhos ainda, define todos eles
+      await sheet.setHeaderRow(headers);
+    }
   }
   
   return sheet;
