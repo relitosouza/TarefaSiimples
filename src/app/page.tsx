@@ -53,10 +53,10 @@ export default async function Home() {
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-xl" />
           <div className="space-y-2">
             <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-balance">
-              Organize sua rotina com <span className="text-primary italic">precisão.</span>
+              Organize sua rotina.
             </h1>
             <p className="text-muted-foreground text-xs md:text-sm font-medium">
-              Gerencie suas pendências de forma minimalista. Dados integrados em tempo real com o Google Sheets.
+              Gerencie suas pendências de forma minimalista.
             </p>
           </div>
           <div className="shrink-0 flex items-center gap-2 bg-primary/5 px-4 py-2.5 rounded-2xl border border-primary/10 w-fit">
