@@ -29,6 +29,29 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [copied, setCopied] = React.useState(false);
 
+  // 1. Ouvinte de evento customizado para disparar a abertura a partir de outros botões (ex: cabeçalho)
+  React.useEffect(() => {
+    const handleOpenEvent = () => {
+      setOpen(true);
+    };
+    window.addEventListener('open-general-report', handleOpenEvent);
+    return () => {
+      window.removeEventListener('open-general-report', handleOpenEvent);
+    };
+  }, []);
+
+  // 2. Timer de abertura automática às 17h30 (Relatório de Fim de Dia)
+  const REPORT_TIME = 17;
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date();
+      if (now.getHours() === REPORT_TIME && now.getMinutes() === 30 && !open) {
+        setOpen(true);
+      }
+    }, 60000);
+    return () => clearInterval(timer);
+  }, [open]);
+
   // Computations
   const totalCount = tasks.length;
   const completedTasks = tasks.filter(t => t.status === 'Concluída');
@@ -124,40 +147,65 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
       minute: '2-digit'
     }).format(new Date());
 
-    let reportText = `📋 RELATÓRIO GERAL DE TAREFAS - TAREFASIMPLES\nGerado em: ${today}\n\n`;
-    reportText += `📊 RESUMO GERAL:\n`;
-    reportText += `• Total de Tarefas: ${totalCount}\n`;
-    reportText += `• Concluídas: ${completedCount} (${completionRate}% de conclusão)\n`;
-    reportText += `• Em Progresso (Parcial): ${partialCount}\n`;
-    reportText += `• Pendentes: ${pendingCount}\n`;
+    let reportText = `============================================================\n`;
+    reportText += `       ✓ TAREFASIMPLES - GESTÃO & PRODUTIVIDADE\n`;
+    reportText += `============================================================\n`;
+    reportText += `            RELATÓRIO CONSOLIDADO DE ATIVIDADES\n`;
+    reportText += `------------------------------------------------------------\n`;
+    reportText += `Gerado em: ${today}\n`;
+    reportText += `------------------------------------------------------------\n\n`;
+    
+    reportText += `📊 MÉTRICAS DE DESEMPENHO:\n`;
+    reportText += `  • Total de Tarefas: ${totalCount}\n`;
+    reportText += `  • Concluídas: ${completedCount} (${completionRate}% de taxa de conclusão)\n`;
+    reportText += `  • Em Progresso (Parciais): ${partialCount}\n`;
+    reportText += `  • Pendentes: ${pendingCount}\n`;
     if (completedCount > 0) {
-      reportText += `• Tempo Médio de Conclusão: ${averageCompletionTime} dia(s)\n`;
+      reportText += `  • Tempo Médio de Conclusão: ${averageCompletionTime} dia(s) por tarefa\n`;
     }
     reportText += `\n`;
 
+    reportText += `🚨 STATUS DE PRIORIDADES ATIVAS:\n`;
+    reportText += `  • Urgente: ${priorityStats.Urgente} | • Alta: ${priorityStats.Alta} | • Média: ${priorityStats.Média} | • Baixa: ${priorityStats.Baixa}\n\n`;
+
     const pendingAndPartial = tasks.filter(t => t.status !== 'Concluída');
     if (pendingAndPartial.length > 0) {
-      reportText += `⚠️ TAREFAS ATIVAS / PENDÊNCIAS (${pendingAndPartial.length}):\n`;
+      reportText += `============================================================\n`;
+      reportText += `⚠️ TAREFAS ATIVAS & EM PROGRESSO (${pendingAndPartial.length})\n`;
+      reportText += `============================================================\n`;
       pendingAndPartial.forEach((t, i) => {
-        const priority = t.prioridade ? `[${t.prioridade}]` : '';
-        const complexity = t.complexidade ? `[Complexidade: ${t.complexidade}]` : '';
-        const elapsed = t.data_criacao ? ` (${getTimeElapsed(t.data_criacao)})` : '';
-        const status = t.status === 'Parcial' ? ' [Em Progresso]' : '';
-        reportText += `${i + 1}. ${status}${priority} ${t.tarefa} - ${complexity}${elapsed}\n`;
+        const priority = t.prioridade ? `[${t.prioridade.toUpperCase()}]` : '[MÉDIA]';
+        const complexity = t.complexidade ? `Complexidade: ${t.complexidade}` : 'Complexidade: Média';
+        const elapsed = t.data_criacao ? `Criada: ${getTimeElapsed(t.data_criacao)}` : '';
+        const status = t.status === 'Parcial' ? '[EM PROGRESSO] ' : '[PENDENTE] ';
+        
+        reportText += `[${i + 1}] ${status}${priority} ${t.tarefa}\n`;
+        reportText += `    • ${complexity} | • ${elapsed}\n`;
         if (t.comentario) {
-          reportText += `   ↳ Comentário: "${t.comentario}"\n`;
+          reportText += `    ↳ Nota Interna: "${t.comentario}"\n`;
         }
+        reportText += `------------------------------------------------------------\n`;
       });
       reportText += `\n`;
     }
 
     if (completedTasks.length > 0) {
-      reportText += `✅ TAREFAS CONCLUÍDAS (${completedTasks.length}):\n`;
+      reportText += `============================================================\n`;
+      reportText += `✅ TAREFAS CONCLUÍDAS RECENTEMENTE (${completedTasks.length})\n`;
+      reportText += `============================================================\n`;
       completedTasks.forEach((t, i) => {
-        const duration = t.data_criacao && t.data_conclusao ? ` (${getCompletionDuration(t.data_criacao, t.data_conclusao)})` : '';
-        reportText += `${i + 1}. ${t.tarefa} - Concluída em ${t.data_conclusao ? formatDate(t.data_conclusao) : formatDate(t.data)}${duration}\n`;
+        const duration = t.data_criacao && t.data_conclusao ? `Duração: ${getCompletionDuration(t.data_criacao, t.data_conclusao)}` : 'Duração: Mesmo dia';
+        const dateStr = t.data_conclusao ? formatDate(t.data_conclusao) : formatDate(t.data);
+        reportText += `[${i + 1}] ${t.tarefa}\n`;
+        reportText += `    • Concluída em: ${dateStr} | • ${duration}\n`;
+        reportText += `------------------------------------------------------------\n`;
       });
+      reportText += `\n`;
     }
+
+    reportText += `============================================================\n`;
+    reportText += `             TarefaSimples - Foco & Organização\n`;
+    reportText += `============================================================`;
 
     navigator.clipboard.writeText(reportText);
     setCopied(true);
@@ -166,54 +214,297 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
 
   // Print Report
   const handlePrint = () => {
-    const printContent = document.getElementById('printable-report-area');
-    if (!printContent) return;
+    const today = new Intl.DateTimeFormat('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(new Date());
 
-    const originalContent = document.body.innerHTML;
-    const originalBg = document.body.style.background;
-    
-    // Add print styles
-    document.body.style.background = 'white';
-    document.body.innerHTML = `
-      <div style="padding: 40px; font-family: sans-serif; color: black; max-width: 800px; margin: 0 auto;">
-        ${printContent.innerHTML}
-      </div>
+    const pendingAndPartial = tasks.filter(t => t.status !== 'Concluída');
+    let pendingAndPartialListHTML = '';
+    if (pendingAndPartial.length === 0) {
+      pendingAndPartialListHTML = '<p style="font-size: 13px; color: #64748B; font-style: italic; margin-top: 10px;">Nenhuma tarefa ativa no momento.</p>';
+    } else {
+      pendingAndPartialListHTML = `
+        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+          <thead>
+            <tr style="background: #F8FAFC; border-bottom: 2px solid #E2E8F0; text-align: left;">
+              <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; width: 40px;">ID</th>
+              <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase;">Tarefa / Descrição</th>
+              <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; text-align: center; width: 100px;">Status</th>
+              <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; text-align: center; width: 100px;">Prioridade</th>
+              <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; text-align: center; width: 100px;">Complexidade</th>
+              <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; text-align: right; width: 120px;">Criada em</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${pendingAndPartial.map((t, idx) => {
+              const priorityColors: Record<string, string> = {
+                'Urgente': 'background: #FEE2E2; color: #991B1B;',
+                'Alta': 'background: #FFEDD5; color: #9A3412;',
+                'Média': 'background: #DBEAFE; color: #1E40AF;',
+                'Baixa': 'background: #F1F5F9; color: #334155;'
+              };
+              const prioStyle = priorityColors[t.prioridade || 'Média'] || priorityColors['Média'];
+              
+              const compColors: Record<string, string> = {
+                'Alta': 'background: #FAF5FF; color: #6B21A8; border: 1px solid #E9D5FF;',
+                'Média': 'background: #F0FDF4; color: #166534; border: 1px solid #BBF7D0;',
+                'Baixa': 'background: #F2F4F7; color: #344054; border: 1px solid #E4E7EC;'
+              };
+              const compStyle = compColors[t.complexidade || 'Média'] || compColors['Média'];
+              
+              const statusLabel = t.status === 'Parcial' ? 'Em Progresso' : 'Pendente';
+              const statusBg = t.status === 'Parcial' ? 'background: #FEF3C7; color: #92400E;' : 'background: #F1F5F9; color: #475569;';
+
+              return `
+                <tr style="border-bottom: 1px solid #F1F5F9;">
+                  <td style="padding: 12px 10px; font-size: 13px; color: #64748B; font-weight: bold;">#${idx + 1}</td>
+                  <td style="padding: 12px 10px; font-size: 13px; font-weight: 600; color: #0F172A;">
+                    ${t.tarefa}
+                    ${t.comentario ? `<div style="font-size: 11px; color: #64748B; font-weight: normal; margin-top: 4px; font-style: italic;">↳ Nota: "${t.comentario}"</div>` : ''}
+                  </td>
+                  <td style="padding: 12px 10px; text-align: center;">
+                    <span style="display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; ${statusBg}">${statusLabel}</span>
+                  </td>
+                  <td style="padding: 12px 10px; text-align: center;">
+                    <span style="display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; ${prioStyle}">${t.prioridade || 'Média'}</span>
+                  </td>
+                  <td style="padding: 12px 10px; text-align: center;">
+                    <span style="display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; ${compStyle}">${t.complexidade || 'Média'}</span>
+                  </td>
+                  <td style="padding: 12px 10px; text-align: right; font-size: 12px; color: #64748B;">${t.data_criacao ? formatDate(t.data_criacao) : formatDate(t.data)}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    let completedListHTML = '';
+    if (completedTasks.length === 0) {
+      completedListHTML = '<p style="font-size: 13px; color: #64748B; font-style: italic; margin-top: 10px;">Nenhuma tarefa concluída ainda.</p>';
+    } else {
+      completedListHTML = `
+        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+          <thead>
+            <tr style="background: #F8FAFC; border-bottom: 2px solid #E2E8F0; text-align: left;">
+              <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; width: 40px;">ID</th>
+              <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase;">Tarefa</th>
+              <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; text-align: center; width: 100px;">Prioridade</th>
+              <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; text-align: center; width: 120px;">Duração</th>
+              <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; text-align: right; width: 150px;">Concluída em</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${completedTasks.map((t, idx) => {
+              const priorityColors: Record<string, string> = {
+                'Urgente': 'background: #FEE2E2; color: #991B1B;',
+                'Alta': 'background: #FFEDD5; color: #9A3412;',
+                'Média': 'background: #DBEAFE; color: #1E40AF;',
+                'Baixa': 'background: #F1F5F9; color: #334155;'
+              };
+              const prioStyle = priorityColors[t.prioridade || 'Média'] || priorityColors['Média'];
+              const duration = t.data_criacao && t.data_conclusao ? getCompletionDuration(t.data_criacao, t.data_conclusao) : 'Mesmo dia';
+
+              return `
+                <tr style="border-bottom: 1px solid #F1F5F9;">
+                  <td style="padding: 12px 10px; font-size: 13px; color: #64748B; font-weight: bold;">#${idx + 1}</td>
+                  <td style="padding: 12px 10px; font-size: 13px; font-weight: 600; color: #0F172A; text-decoration: line-through; opacity: 0.7;">${t.tarefa}</td>
+                  <td style="padding: 12px 10px; text-align: center;">
+                    <span style="display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; ${prioStyle}">${t.prioridade || 'Média'}</span>
+                  </td>
+                  <td style="padding: 12px 10px; text-align: center; font-size: 12px; font-weight: bold; color: #166534;">${duration}</td>
+                  <td style="padding: 12px 10px; text-align: right; font-size: 12px; color: #64748B;">${t.data_conclusao ? formatDate(t.data_conclusao) : formatDate(t.data)}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    const reportHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Relatório Geral de Tarefas - TarefaSimples</title>
+        <meta charset="utf-8">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+        <style>
+          @media print {
+            body { background: white; color: black; }
+            .no-print { display: none; }
+            tr { page-break-inside: avoid; }
+          }
+        </style>
+      </head>
+      <body style="margin: 0; padding: 40px; font-family: 'Inter', sans-serif; color: #1E293B; background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
+        <div style="max-width: 900px; margin: 0 auto;">
+          <!-- Header Corporativo -->
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #E2E8F0; padding-bottom: 20px; margin-bottom: 30px;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span style="font-size: 20px; font-weight: 900; letter-spacing: 0.15em; color: #0F172A; text-transform: uppercase;">✓ TarefaSimples</span>
+              </div>
+              <h1 style="font-size: 22px; font-weight: 900; color: #0F172A; margin: 0; letter-spacing: -0.03em;">RELATÓRIO CONSOLIDADO DE PRODUTIVIDADE</h1>
+              <p style="font-size: 12px; color: #64748B; margin: 4px 0 0 0; font-weight: 500;">Controle analítico de pendências, prazos e metas realizadas</p>
+            </div>
+            <div style="text-align: right;">
+              <span style="font-size: 9px; text-transform: uppercase; font-weight: 800; color: #64748B; letter-spacing: 0.05em; display: block;">Data de Emissão</span>
+              <p style="font-size: 14px; font-weight: 700; color: #0F172A; margin: 2px 0 0 0;">${today}</p>
+            </div>
+          </div>
+
+          <!-- KPI Cards Grid (Estatísticas) -->
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 35px;">
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 16px; padding: 16px; text-align: center;">
+              <span style="font-size: 10px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.1em; display: block;">Total de Tarefas</span>
+              <p style="font-size: 32px; font-weight: 900; color: #0F172A; margin: 6px 0 0 0; letter-spacing: -0.05em;">${totalCount}</p>
+            </div>
+            <div style="background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 16px; padding: 16px; text-align: center;">
+              <span style="font-size: 10px; font-weight: 800; color: #065F46; text-transform: uppercase; letter-spacing: 0.1em; display: block;">Concluídas</span>
+              <p style="font-size: 32px; font-weight: 900; color: #065F46; margin: 6px 0 0 0; letter-spacing: -0.05em;">${completedCount}</p>
+            </div>
+            <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 16px; padding: 16px; text-align: center;">
+              <span style="font-size: 10px; font-weight: 800; color: #1E40AF; text-transform: uppercase; letter-spacing: 0.1em; display: block;">Pendentes / Ativas</span>
+              <p style="font-size: 32px; font-weight: 900; color: #1E40AF; margin: 6px 0 0 0; letter-spacing: -0.05em;">${activeTasksCount}</p>
+            </div>
+            <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 16px; padding: 16px; text-align: center;">
+              <span style="font-size: 10px; font-weight: 800; color: #92400E; text-transform: uppercase; letter-spacing: 0.1em; display: block;">Taxa Conclusão</span>
+              <p style="font-size: 32px; font-weight: 900; color: #92400E; margin: 6px 0 0 0; letter-spacing: -0.05em;">${completionRate}%</p>
+            </div>
+          </div>
+
+          <!-- Distribuição por Prioridade -->
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 16px; padding: 20px; margin-bottom: 35px;">
+            <h3 style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #475569; margin: 0 0 15px 0;">Distribuição por Prioridade</h3>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
+                <span style="font-size: 11px; font-weight: 800; color: #DC2626;">🚨 URGENTE</span>
+                <span style="font-size: 16px; font-weight: 900; color: #DC2626;">${priorityStats.Urgente}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
+                <span style="font-size: 11px; font-weight: 800; color: #EA580C;">⚠️ ALTA</span>
+                <span style="font-size: 16px; font-weight: 900; color: #EA580C;">${priorityStats.Alta}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
+                <span style="font-size: 11px; font-weight: 800; color: #2563EB;">🔹 MÉDIA</span>
+                <span style="font-size: 16px; font-weight: 900; color: #2563EB;">${priorityStats.Média}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
+                <span style="font-size: 11px; font-weight: 800; color: #475569;">▫️ BAIXA</span>
+                <span style="font-size: 16px; font-weight: 900; color: #475569;">${priorityStats.Baixa}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tempo Médio -->
+          ${completedCount > 0 ? `
+          <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 16px; padding: 15px 20px; margin-bottom: 35px; display: flex; align-items: center; gap: 15px;">
+            <div style="font-size: 24px;">⚡</div>
+            <div>
+              <p style="margin: 0; font-size: 14px; font-weight: 800; color: #166534; text-transform: uppercase; letter-spacing: 0.05em;">Tempo Médio de Conclusão</p>
+              <p style="margin: 2px 0 0 0; font-size: 13px; color: #14532D; font-weight: 500;">Você está levando em média <strong>${averageCompletionTime} dia(s)</strong> para entregar as tarefas concluídas. Excelente trabalho!</p>
+            </div>
+          </div>
+          ` : ''}
+
+          <!-- Tarefas Ativas / Pendentes -->
+          <div style="margin-bottom: 40px; page-break-inside: avoid;">
+            <h2 style="font-size: 15px; font-weight: 900; color: #0F172A; border-left: 4px solid #2563EB; padding-left: 10px; margin: 0 0 15px 0; text-transform: uppercase; letter-spacing: -0.01em;">Ativas & Em Progresso (${activeTasksCount})</h2>
+            ${pendingAndPartialListHTML}
+          </div>
+
+          <!-- Tarefas Concluídas -->
+          <div style="margin-bottom: 40px; page-break-inside: avoid;">
+            <h2 style="font-size: 15px; font-weight: 900; color: #0F172A; border-left: 4px solid #10B981; padding-left: 10px; margin: 0 0 15px 0; text-transform: uppercase; letter-spacing: -0.01em;">Concluídas Recentemente (${completedTasks.length})</h2>
+            ${completedListHTML}
+          </div>
+
+          <!-- Footer -->
+          <div style="text-align: center; border-top: 1px solid #E2E8F0; padding-top: 20px; margin-top: 50px; font-size: 11px; color: #94A3B8; font-weight: 500;">
+            Documento emitido eletronicamente via plataforma <strong>TarefaSimples</strong>.
+          </div>
+        </div>
+      </body>
+      </html>
     `;
-    
-    window.print();
-    
-    // Restore original content
-    document.body.style.background = originalBg;
-    document.body.innerHTML = originalContent;
-    window.location.reload(); // Quick reload to restore React state and listeners
+
+    // Create a hidden iframe
+    let iframe = document.getElementById('print-iframe') as HTMLIFrameElement;
+    if (!iframe) {
+      iframe = document.createElement('iframe');
+      iframe.id = 'print-iframe';
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = 'none';
+      document.body.appendChild(iframe);
+    }
+
+    const doc = iframe.contentWindow?.document || iframe.contentDocument;
+    if (doc) {
+      doc.open();
+      doc.write(reportHtml);
+      doc.close();
+      
+      // Allow fonts and styles to load, then print
+      setTimeout(() => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      }, 500);
+    }
   };
 
-  // Filter tasks based on search
+  // Filter tasks based on search and sort by priority weights
   const filteredPending = React.useMemo(() => {
-    return tasks.filter(t => 
-      t.status !== 'Concluída' && 
-      t.tarefa.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const weights: Record<string, number> = { 'Urgente': 4, 'Alta': 3, 'Média': 2, 'Baixa': 1 };
+    return tasks
+      .filter(t => 
+        t.status !== 'Concluída' && 
+        t.tarefa.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+      .sort((a, b) => {
+        const aW = weights[a.prioridade || 'Média'] || 2;
+        const bW = weights[b.prioridade || 'Média'] || 2;
+        if (aW !== bW) return bW - aW;
+        const aT = a.data_criacao ? new Date(a.data_criacao).getTime() : 0;
+        const bT = b.data_criacao ? new Date(b.data_criacao).getTime() : 0;
+        return bT - aT;
+      });
   }, [tasks, searchQuery]);
 
   const filteredCompleted = React.useMemo(() => {
-    return tasks.filter(t => 
-      t.status === 'Concluída' && 
-      t.tarefa.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const weights: Record<string, number> = { 'Urgente': 4, 'Alta': 3, 'Média': 2, 'Baixa': 1 };
+    return tasks
+      .filter(t => 
+        t.status === 'Concluída' && 
+        t.tarefa.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+      .sort((a, b) => {
+        const aW = weights[a.prioridade || 'Média'] || 2;
+        const bW = weights[b.prioridade || 'Média'] || 2;
+        if (aW !== bW) return bW - aW;
+        const aT = a.data_conclusao ? new Date(a.data_conclusao).getTime() : 0;
+        const bT = b.data_conclusao ? new Date(b.data_conclusao).getTime() : 0;
+        return bT - aT;
+      });
   }, [tasks, searchQuery]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={<Button 
-          variant="outline"
-          className="rounded-2xl border-primary/20 hover:border-primary px-4 py-2 flex items-center gap-2 transition-all shrink-0 font-bold text-xs md:text-sm uppercase tracking-wider"
+          className="fixed bottom-6 right-6 h-14 md:h-16 px-6 md:px-8 rounded-full shadow-2xl shadow-primary/40 animate-bounce hover:animate-none group z-40 transition-transform active:scale-95 flex items-center gap-2"
           aria-label="Abrir Relatório Geral"
         />}>
-          <div className="flex items-center gap-2">
-            <ClipboardList className="h-4 w-4 text-primary" />
-            <span>Relatório Geral</span>
-          </div>
+          <ClipboardList className="h-5 w-5 md:h-6 md:w-6 transition-transform group-hover:rotate-12" />
+          <span className="font-black text-xs md:text-sm uppercase tracking-widest">Relatório Geral</span>
       </DialogTrigger>
 
       <DialogContent 
@@ -471,12 +762,13 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
                               <>
                                 <span>•</span>
                                 <span className={cn(
-                                  task.prioridade === 'Urgente' && "text-red-500",
-                                  task.prioridade === 'Alta' && "text-orange-500",
-                                  task.prioridade === 'Média' && "text-slate-500",
-                                  task.prioridade === 'Baixa' && "text-slate-400"
+                                  "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border shrink-0",
+                                  task.prioridade === 'Urgente' && "bg-red-500/10 text-red-500 border-red-500/10 dark:bg-red-500/20",
+                                  task.prioridade === 'Alta' && "bg-orange-500/10 text-orange-500 border-orange-500/10 dark:bg-orange-500/20",
+                                  task.prioridade === 'Média' && "bg-blue-500/10 text-blue-500 border-blue-500/10 dark:bg-blue-500/20",
+                                  task.prioridade === 'Baixa' && "bg-slate-500/10 text-slate-500 border-slate-500/10 dark:bg-slate-500/20"
                                 )}>
-                                  Prioridade: {task.prioridade}
+                                  {task.prioridade}
                                 </span>
                               </>
                             )}
@@ -550,7 +842,15 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
                             {task.prioridade && (
                               <>
                                 <span>•</span>
-                                <span className="opacity-60">Prioridade: {task.prioridade}</span>
+                                <span className={cn(
+                                  "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border shrink-0",
+                                  task.prioridade === 'Urgente' && "bg-red-500/10 text-red-500 border-red-500/10 dark:bg-red-500/20",
+                                  task.prioridade === 'Alta' && "bg-orange-500/10 text-orange-500 border-orange-500/10 dark:bg-orange-500/20",
+                                  task.prioridade === 'Média' && "bg-blue-500/10 text-blue-500 border-blue-500/10 dark:bg-blue-500/20",
+                                  task.prioridade === 'Baixa' && "bg-slate-500/10 text-slate-500 border-slate-500/10 dark:bg-slate-500/20"
+                                )}>
+                                  {task.prioridade}
+                                </span>
                               </>
                             )}
                           </div>

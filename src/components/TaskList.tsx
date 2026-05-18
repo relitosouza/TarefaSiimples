@@ -27,6 +27,36 @@ export function TaskList({ tasks }: TaskListProps) {
   const [tempStatus, setTempStatus] = useState<TaskStatus | null>(null);
   const [comment, setComment] = useState('');
 
+  // Pesos para ordenação por prioridade
+  const priorityWeights: Record<string, number> = {
+    'Urgente': 4,
+    'Alta': 3,
+    'Média': 2,
+    'Baixa': 1
+  };
+
+  // Ordenação inteligente: Pendentes/Parciais primeiro (ordenados por prioridade), seguidos pelas Concluídas.
+  const sortedTasks = [...tasks].sort((a, b) => {
+    // 1. Separar concluídas (vão para o fim)
+    const aIsCompleted = a.status === 'Concluída' ? 1 : 0;
+    const bIsCompleted = b.status === 'Concluída' ? 1 : 0;
+    if (aIsCompleted !== bIsCompleted) {
+      return aIsCompleted - bIsCompleted;
+    }
+
+    // 2. Ordenar por prioridade (Maior peso primeiro)
+    const aWeight = priorityWeights[a.prioridade || 'Média'] || 2;
+    const bWeight = priorityWeights[b.prioridade || 'Média'] || 2;
+    if (aWeight !== bWeight) {
+      return bWeight - aWeight;
+    }
+
+    // 3. Ordenar por data de criação (Mais recente primeiro)
+    const aTime = a.data_criacao ? new Date(a.data_criacao).getTime() : 0;
+    const bTime = b.data_criacao ? new Date(b.data_criacao).getTime() : 0;
+    return bTime - aTime;
+  });
+
   useEffect(() => {
     if (selectedTask) {
       setTempStatus(selectedTask.status);
@@ -76,7 +106,7 @@ export function TaskList({ tasks }: TaskListProps) {
 
   return (
     <div className="space-y-4" role="list" aria-label="Lista de Tarefas">
-      {tasks.map((task) => (
+      {sortedTasks.map((task) => (
         <div 
           key={task.id} 
           role="listitem"
@@ -110,20 +140,31 @@ export function TaskList({ tasks }: TaskListProps) {
                 >
                   {task.tarefa}
                 </p>
-                <div className="flex items-center gap-3 text-[10px] md:text-xs font-black text-muted-foreground/40 uppercase tracking-[0.2em]">
-                   <span className="flex items-center gap-1">
+                <div className="flex items-center gap-2.5 flex-wrap text-[10px] md:text-xs font-black text-muted-foreground/40 uppercase tracking-[0.15em]">
+                   <span className="flex items-center gap-1 shrink-0">
                       {formatDate(task.data)}
                    </span>
                    {task.status !== 'Pendente' && (
                       <span className={cn(
-                        "flex items-center gap-1",
+                        "flex items-center gap-1 shrink-0",
                         task.status === 'Concluída' ? "text-green-500" : "text-orange-500"
                       )}>
                          • {task.status}
                       </span>
                    )}
+                   {task.prioridade && (
+                      <span className={cn(
+                        "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border shrink-0",
+                        task.prioridade === 'Urgente' && "bg-red-500/10 text-red-500 border-red-500/10 dark:bg-red-500/20",
+                        task.prioridade === 'Alta' && "bg-orange-500/10 text-orange-500 border-orange-500/10 dark:bg-orange-500/20",
+                        task.prioridade === 'Média' && "bg-blue-500/10 text-blue-500 border-blue-500/10 dark:bg-blue-500/20",
+                        task.prioridade === 'Baixa' && "bg-slate-500/10 text-slate-500 border-slate-500/10 dark:bg-slate-500/20"
+                      )}>
+                        {task.prioridade}
+                      </span>
+                    )}
                    {task.comentario && (
-                     <span className="flex items-center gap-1 text-primary">
+                     <span className="flex items-center gap-1 text-primary shrink-0">
                         <MessageSquareText className="h-3 w-3" />
                         Comentário
                      </span>

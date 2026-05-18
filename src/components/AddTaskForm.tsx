@@ -19,6 +19,26 @@ export function AddTaskForm({ history }: AddTaskFormProps) {
   const [priority, setPriority] = useState<'Baixa' | 'Média' | 'Alta' | 'Urgente'>('Média');
   const [mounted, setMounted] = useState(false);
 
+  // Estilos de cores para as prioridades combinando com os badges
+  const priorityStyles: Record<string, { active: string; inactive: string }> = {
+    'Urgente': {
+      active: 'bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/20 dark:bg-red-600 dark:border-red-600 dark:shadow-red-600/25',
+      inactive: 'bg-card border-transparent text-muted-foreground hover:border-red-500/30 hover:bg-red-500/5 hover:text-red-500'
+    },
+    'Alta': {
+      active: 'bg-orange-500 text-white border-orange-500 shadow-lg shadow-orange-500/20 dark:bg-orange-600 dark:border-orange-600 dark:shadow-orange-600/25',
+      inactive: 'bg-card border-transparent text-muted-foreground hover:border-orange-500/30 hover:bg-orange-500/5 hover:text-orange-500'
+    },
+    'Média': {
+      active: 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/20 dark:bg-blue-600 dark:border-blue-600 dark:shadow-blue-600/25',
+      inactive: 'bg-card border-transparent text-muted-foreground hover:border-blue-500/30 hover:bg-blue-500/5 hover:text-blue-500'
+    },
+    'Baixa': {
+      active: 'bg-slate-500 text-white border-slate-500 shadow-lg shadow-slate-500/20 dark:bg-slate-600 dark:border-slate-600 dark:shadow-slate-600/25',
+      inactive: 'bg-card border-transparent text-muted-foreground hover:border-slate-500/30 hover:bg-slate-500/5 hover:text-slate-500'
+    }
+  };
+
   useEffect(() => setMounted(true), []);
 
   const suggestions = history
@@ -114,8 +134,8 @@ export function AddTaskForm({ history }: AddTaskFormProps) {
 
          {/* Prioridade */}
          <div className="space-y-3">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-500/60 px-1 flex items-center gap-2">
-               <ShieldAlert className="h-3 w-3" />
+            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 px-1 flex items-center gap-2">
+               <ShieldAlert className="h-3 w-3 animate-pulse" />
                Prioridade
             </label>
             <div className="flex gap-2">
@@ -124,12 +144,10 @@ export function AddTaskForm({ history }: AddTaskFormProps) {
                    key={p}
                    onClick={() => setPriority(p as any)}
                    className={cn(
-                     "flex-1 h-12 rounded-2xl font-bold text-[9px] uppercase tracking-tighter transition-all border-2",
+                     "flex-1 h-12 rounded-2xl font-bold text-[9px] uppercase tracking-wider transition-all border-2 active:scale-95",
                      priority === p 
-                      ? p === 'Urgente' 
-                        ? "bg-orange-600 text-white border-orange-600 shadow-lg shadow-orange-600/20"
-                        : "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20"
-                      : "bg-card border-transparent text-muted-foreground hover:border-primary/20 hover:bg-background"
+                       ? priorityStyles[p].active 
+                       : priorityStyles[p].inactive
                    )}
                  >
                    {p}
