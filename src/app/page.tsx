@@ -2,6 +2,7 @@ import { AddTaskForm } from '@/components/AddTaskForm';
 import { TaskList } from '@/components/TaskList';
 import { getTasks } from '@/actions/tasks';
 import { DailyReportModal } from '@/components/DailyReportModal';
+import { GeneralReportModal } from '@/components/GeneralReportModal';
 import { ProductivityCharts } from '@/components/ProductivityCharts';
 import { BarChart2, CheckCircle2 } from 'lucide-react';
 
@@ -37,13 +38,14 @@ export default async function Home() {
           
           {/* Coluna da Esquerda: Lista de Tarefas */}
           <section className="lg:col-span-8 space-y-8" aria-labelledby="tasks-heading">
-            <div className="flex items-end justify-between px-2">
+            <div className="flex items-center justify-between px-2 gap-4">
               <div>
                 <h2 id="tasks-heading" className="text-2xl md:text-4xl font-black tracking-tight">Minhas Tarefas</h2>
                 <p className="text-xs md:text-base text-muted-foreground mt-1 font-medium">
                   {pendingTasksCount} {pendingTasksCount === 1 ? 'item pendente' : 'itens pendentes'} hoje
                 </p>
               </div>
+              <GeneralReportModal tasks={tasks} />
             </div>
             <TaskList tasks={tasks} />
           </section>
