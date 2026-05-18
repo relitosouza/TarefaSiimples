@@ -264,8 +264,8 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
 
               const nameStyles: Record<string, string> = {
                 'Amanda': 'background: #F3E8FF; color: #6B21A8; border: 1px solid #E9D5FF;',
-                'Barbara': 'background: #FCE7F3; color: #9D174D; border: 1px solid #FBCFE8;',
-                'Dayse': 'background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A;'
+                'Bárbara': 'background: #FCE7F3; color: #9D174D; border: 1px solid #FBCFE8;',
+                'Daisy': 'background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A;'
               };
               const nameStyle = t.responsavel ? (nameStyles[t.responsavel] || 'background: #F1F5F9; color: #475569;') : 'background: transparent; color: #94A3B8;';
 
@@ -326,8 +326,8 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
 
               const nameStyles: Record<string, string> = {
                 'Amanda': 'background: #F3E8FF; color: #6B21A8; border: 1px solid #E9D5FF;',
-                'Barbara': 'background: #FCE7F3; color: #9D174D; border: 1px solid #FBCFE8;',
-                'Dayse': 'background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A;'
+                'Bárbara': 'background: #FCE7F3; color: #9D174D; border: 1px solid #FBCFE8;',
+                'Daisy': 'background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A;'
               };
               const nameStyle = t.responsavel ? (nameStyles[t.responsavel] || 'background: #F1F5F9; color: #475569;') : 'background: transparent; color: #94A3B8;';
 

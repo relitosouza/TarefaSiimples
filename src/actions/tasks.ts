@@ -100,7 +100,7 @@ export async function updateTask(
     complexidade?: 'Alta' | 'Média' | 'Baixa';
     comentario?: string;
     status?: TaskStatus;
-    responsavel?: 'Amanda' | 'Barbara' | 'Dayse' | '';
+    responsavel?: 'Amanda' | 'Bárbara' | 'Daisy' | '';
   }
 ) {
   try {

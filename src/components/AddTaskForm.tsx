@@ -17,7 +17,7 @@ export function AddTaskForm({ history }: AddTaskFormProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [complexity, setComplexity] = useState<'Baixa' | 'Média' | 'Alta'>('Média');
   const [priority, setPriority] = useState<'Baixa' | 'Média' | 'Alta' | 'Urgente'>('Média');
-  const [responsavel, setResponsavel] = useState<'Amanda' | 'Barbara' | 'Dayse'>('Amanda');
+  const [responsavel, setResponsavel] = useState<'Amanda' | 'Bárbara' | 'Daisy'>('Amanda');
   const [mounted, setMounted] = useState(false);
 
   // Estilos de cores para as prioridades combinando com os badges
@@ -46,11 +46,11 @@ export function AddTaskForm({ history }: AddTaskFormProps) {
       active: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/20 dark:bg-purple-600 dark:border-purple-600 dark:shadow-purple-600/25',
       inactive: 'bg-card border-transparent text-muted-foreground hover:border-purple-500/30 hover:bg-purple-500/5 hover:text-purple-500'
     },
-    'Barbara': {
+    'Bárbara': {
       active: 'bg-pink-500 text-white border-pink-500 shadow-lg shadow-pink-500/20 dark:bg-pink-600 dark:border-pink-600 dark:shadow-pink-600/25',
       inactive: 'bg-card border-transparent text-muted-foreground hover:border-pink-500/30 hover:bg-pink-500/5 hover:text-pink-500'
     },
-    'Dayse': {
+    'Daisy': {
       active: 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/20 dark:bg-amber-600 dark:border-amber-600 dark:shadow-amber-600/25',
       inactive: 'bg-card border-transparent text-muted-foreground hover:border-amber-500/30 hover:bg-amber-500/5 hover:text-amber-500'
     }
@@ -125,14 +125,14 @@ export function AddTaskForm({ history }: AddTaskFormProps) {
 
       {/* Seletores de Atributos em Grid Simétrico */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-2">
-         {/* Responsável (Amanda, Barbara, Dayse) */}
+         {/* Responsável (Amanda, Bárbara, Daisy) */}
          <div className="space-y-3">
             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 px-1 flex items-center gap-2">
                <User className="h-3 w-3" />
                Responsável
             </label>
             <div className="flex gap-2">
-               {(['Amanda', 'Barbara', 'Dayse'] as const).map((name) => (
+               {(['Amanda', 'Bárbara', 'Daisy'] as const).map((name) => (
                  <button
                    key={name}
                    type="button"

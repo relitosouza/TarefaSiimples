@@ -46,7 +46,7 @@ export function TaskList({ tasks }: TaskListProps) {
   const [editTarefa, setEditTarefa] = useState('');
   const [editPrioridade, setEditPrioridade] = useState<'Urgente' | 'Alta' | 'Média' | 'Baixa'>('Média');
   const [editComplexidade, setEditComplexidade] = useState<'Alta' | 'Média' | 'Baixa'>('Média');
-  const [editResponsavel, setEditResponsavel] = useState<'Amanda' | 'Barbara' | 'Dayse' | ''>('');
+  const [editResponsavel, setEditResponsavel] = useState<'Amanda' | 'Bárbara' | 'Daisy' | ''>('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [activeTab, setActiveTab] = useState<'active' | 'completed'>('active');
 
@@ -255,8 +255,8 @@ export function TaskList({ tasks }: TaskListProps) {
                     <span className={cn(
                       "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border shrink-0 flex items-center gap-1",
                       task.responsavel === 'Amanda' && "bg-purple-500/10 text-purple-600 border-purple-500/10 dark:bg-purple-500/20 dark:text-purple-400",
-                      task.responsavel === 'Barbara' && "bg-pink-500/10 text-pink-600 border-pink-500/10 dark:bg-pink-500/20 dark:text-pink-400",
-                      task.responsavel === 'Dayse' && "bg-amber-500/10 text-amber-600 border-amber-500/10 dark:bg-amber-500/20 dark:text-amber-400"
+                      task.responsavel === 'Bárbara' && "bg-pink-500/10 text-pink-600 border-pink-500/10 dark:bg-pink-500/20 dark:text-pink-400",
+                      task.responsavel === 'Daisy' && "bg-amber-500/10 text-amber-600 border-amber-500/10 dark:bg-amber-500/20 dark:text-amber-400"
                     )}>
                       <User className="h-2 w-2 shrink-0" />
                       {task.responsavel}
@@ -409,17 +409,17 @@ export function TaskList({ tasks }: TaskListProps) {
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/75 px-1">Responsável</label>
               <div className="grid grid-cols-3 gap-1.5">
-                {(['Amanda', 'Barbara', 'Dayse'] as const).map((name) => {
+                {(['Amanda', 'Bárbara', 'Daisy'] as const).map((name) => {
                   const nameColors = {
                     Amanda: 'bg-purple-500/10 text-purple-500 border-purple-500/20 active:bg-purple-500 active:text-white',
-                    Barbara: 'bg-pink-500/10 text-pink-500 border-pink-500/20 active:bg-pink-500 active:text-white',
-                    Dayse: 'bg-amber-500/10 text-amber-500 border-amber-500/20 active:bg-amber-500 active:text-white',
+                    'Bárbara': 'bg-pink-500/10 text-pink-500 border-pink-500/20 active:bg-pink-500 active:text-white',
+                    Daisy: 'bg-amber-500/10 text-amber-500 border-amber-500/20 active:bg-amber-500 active:text-white',
                   };
                   
                   const activeNameColors = {
                     Amanda: 'bg-purple-500 text-white border-purple-500 shadow-sm',
-                    Barbara: 'bg-pink-500 text-white border-pink-500 shadow-sm',
-                    Dayse: 'bg-amber-500 text-white border-amber-500 shadow-sm',
+                    'Bárbara': 'bg-pink-500 text-white border-pink-500 shadow-sm',
+                    Daisy: 'bg-amber-500 text-white border-amber-500 shadow-sm',
                   };
 
                   const isSelected = editResponsavel === name;
