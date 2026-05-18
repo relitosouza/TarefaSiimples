@@ -70,17 +70,15 @@ export function DailyReportModal() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button 
+      <DialogTrigger render={<Button 
           className="fixed bottom-6 right-6 h-14 md:h-16 px-6 md:px-8 rounded-full shadow-2xl shadow-primary/40 animate-bounce hover:animate-none group z-40 transition-transform active:scale-95"
           aria-label="Gerar Relatório Diário"
           onClick={fetchReport}
-        >
+        />}>
           <div className="flex items-center gap-2">
             <ClipboardList className="h-5 w-5 md:h-6 md:w-6 transition-transform group-hover:rotate-12" />
             <span className="font-black text-sm md:text-base uppercase tracking-widest">Relatório Do Dia</span>
           </div>
-        </Button>
       </DialogTrigger>
       <DialogContent 
         className="sm:max-w-lg rounded-[2.5rem] p-0 overflow-hidden border-none shadow-3xl overscroll-behavior-contain flex flex-col max-h-[90vh]"
