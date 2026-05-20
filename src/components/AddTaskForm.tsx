@@ -1,10 +1,10 @@
 'use client';
 
 import { addTask } from '@/actions/tasks';
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Zap, ShieldAlert, User } from 'lucide-react';
+import { Plus, Search, Zap, ShieldAlert, User, Mic, MicOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AddTaskFormProps {
@@ -19,6 +19,9 @@ export function AddTaskForm({ history }: AddTaskFormProps) {
   const [priority, setPriority] = useState<'Baixa' | 'Média' | 'Alta' | 'Urgente'>('Média');
   const [responsavel, setResponsavel] = useState<'Amanda' | 'Bárbara' | 'Daisy'>('Amanda');
   const [mounted, setMounted] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [voiceSupported, setVoiceSupported] = useState(false);
+  const recognitionRef = useRef<any>(null);
 
   // Estilos de cores para as prioridades combinando com os badges
   const priorityStyles: Record<string, { active: string; inactive: string }> = {
@@ -56,7 +59,43 @@ export function AddTaskForm({ history }: AddTaskFormProps) {
     }
   };
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+    setVoiceSupported('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
+  }, []);
+
+  const startVoiceInput = () => {
+    if (isListening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'pt-BR';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognitionRef.current = recognition;
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => {
+      setIsListening(false);
+      recognitionRef.current = null;
+    };
+    recognition.onerror = () => {
+      setIsListening(false);
+      recognitionRef.current = null;
+    };
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setQuery(transcript);
+      setShowSuggestions(true);
+    };
+
+    recognition.start();
+  };
 
   const suggestions = history
     .filter(item => item.toLowerCase().includes(query.toLowerCase()) && query.length > 0)
@@ -89,10 +128,25 @@ export function AddTaskForm({ history }: AddTaskFormProps) {
           }}
           onFocus={() => setShowSuggestions(true)}
           placeholder="O que vamos realizar hoje?"
-          className="h-16 md:h-20 pl-16 pr-32 rounded-[2rem] border-none bg-card/80 backdrop-blur-xl shadow-2xl shadow-primary/5 text-lg md:text-xl font-bold placeholder:text-muted-foreground/40 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
+          className="h-16 md:h-20 pl-16 pr-44 md:pr-52 rounded-[2rem] border-none bg-card/80 backdrop-blur-xl shadow-2xl shadow-primary/5 text-lg md:text-xl font-bold placeholder:text-muted-foreground/40 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
         />
-        <div className="absolute right-3 top-1/2 -translate-y-1/2">
-           <Button 
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+          {voiceSupported && (
+            <button
+              type="button"
+              onClick={startVoiceInput}
+              title={isListening ? 'Parar gravação' : 'Falar tarefa'}
+              className={cn(
+                "h-10 w-10 md:h-12 md:w-12 rounded-full flex items-center justify-center transition-all border-2",
+                isListening
+                  ? "bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/30 animate-pulse"
+                  : "bg-card border-transparent text-muted-foreground hover:border-primary/30 hover:bg-primary/10 hover:text-primary"
+              )}
+            >
+              {isListening ? <MicOff className="h-4 w-4 md:h-5 md:w-5" /> : <Mic className="h-4 w-4 md:h-5 md:w-5" />}
+            </button>
+          )}
+           <Button
              onClick={() => handleSubmit(query)}
              disabled={isPending || !query.trim()}
              className="h-10 md:h-14 px-6 md:px-8 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-primary/20"
