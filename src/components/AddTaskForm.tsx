@@ -128,7 +128,7 @@ export function AddTaskForm({ history }: AddTaskFormProps) {
           }}
           onFocus={() => setShowSuggestions(true)}
           placeholder="O que vamos realizar hoje?"
-          className="h-16 md:h-20 pl-16 pr-44 md:pr-52 rounded-[2rem] border-none bg-card/80 backdrop-blur-xl shadow-2xl shadow-primary/5 text-lg md:text-xl font-bold placeholder:text-muted-foreground/40 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
+          className="h-16 md:h-20 pl-16 pr-32 md:pr-52 rounded-[2rem] border-none bg-card/80 backdrop-blur-xl shadow-2xl shadow-primary/5 text-lg md:text-xl font-bold placeholder:text-muted-foreground/40 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
         />
         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
           {voiceSupported && (
@@ -137,13 +137,13 @@ export function AddTaskForm({ history }: AddTaskFormProps) {
               onClick={startVoiceInput}
               title={isListening ? 'Parar gravação' : 'Falar tarefa'}
               className={cn(
-                "h-10 w-10 md:h-12 md:w-12 rounded-full flex items-center justify-center transition-all border-2",
+                "hidden md:flex h-12 w-12 rounded-full items-center justify-center transition-all border-2",
                 isListening
                   ? "bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/30 animate-pulse"
                   : "bg-card border-transparent text-muted-foreground hover:border-primary/30 hover:bg-primary/10 hover:text-primary"
               )}
             >
-              {isListening ? <MicOff className="h-4 w-4 md:h-5 md:w-5" /> : <Mic className="h-4 w-4 md:h-5 md:w-5" />}
+              {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
             </button>
           )}
            <Button
@@ -155,6 +155,23 @@ export function AddTaskForm({ history }: AddTaskFormProps) {
            </Button>
         </div>
       </div>
+
+      {/* Botão de microfone — apenas no celular */}
+      {voiceSupported && (
+        <button
+          type="button"
+          onClick={startVoiceInput}
+          className={cn(
+            "flex md:hidden w-full h-14 rounded-2xl items-center justify-center gap-3 font-bold text-sm uppercase tracking-widest transition-all border-2",
+            isListening
+              ? "bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/30 animate-pulse"
+              : "bg-card border-transparent text-muted-foreground hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+          )}
+        >
+          {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+          <span>{isListening ? 'Parar gravação' : 'Falar tarefa'}</span>
+        </button>
+      )}
 
       {/* Sugestões */}
       {showSuggestions && suggestions.length > 0 && (
