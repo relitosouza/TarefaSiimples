@@ -4,7 +4,7 @@ import { addTask } from '@/actions/tasks';
 import { useState, useTransition, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Zap, ShieldAlert, User } from 'lucide-react';
+import { Plus, Search, Zap, ShieldAlert, User, Mic, MicOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AddTaskFormProps {
