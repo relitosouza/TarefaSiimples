@@ -14,6 +14,7 @@ import {
   Timer, 
   Clock, 
   ChevronRight, 
+  ChevronLeft,
   MessageSquareText, 
   Trash2, 
   AlertTriangle,
@@ -50,6 +51,8 @@ export function TaskList({ tasks }: TaskListProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [activeTab, setActiveTab] = useState<'active' | 'completed'>('active');
 
+  // Filtros de busca desativados
+
   // Pesos para ordenação por prioridade
   const priorityWeights: Record<string, number> = {
     'Urgente': 4,
@@ -58,7 +61,7 @@ export function TaskList({ tasks }: TaskListProps) {
     'Baixa': 1
   };
 
-  // Separação de Ativas vs Concluídas
+  // Separação de Ativas vs Concluídas a partir das tarefas reais
   const activeTasks = tasks.filter(t => t.status !== 'Concluída').sort((a, b) => {
     // Ordenar por prioridade (Maior peso primeiro)
     const aWeight = priorityWeights[a.prioridade || 'Média'] || 2;
@@ -193,7 +196,7 @@ export function TaskList({ tasks }: TaskListProps) {
         key={task.id} 
         role="listitem"
         className={cn(
-          "group flex items-center justify-between p-4 md:p-5 bg-card border rounded-[2rem] transition-all hover:border-primary/30 hover:shadow-md cursor-pointer active:scale-[0.98]",
+          "group flex items-center justify-between p-4 md:p-5 bg-card border rounded-xl transition-all hover:border-primary/30 hover:shadow-md cursor-pointer active:scale-[0.98]",
           task.status === 'Parcial' && "border-l-4 border-l-orange-500",
           task.status === 'Concluída' && "opacity-75 bg-slate-50/50 dark:bg-slate-900/30"
         )}
@@ -279,7 +282,7 @@ export function TaskList({ tasks }: TaskListProps) {
 
   if (tasks.length === 0) {
     return (
-      <div className="text-center py-20 border-2 border-dashed rounded-[3rem] opacity-50 flex flex-col items-center">
+      <div className="text-center py-20 border-2 border-dashed rounded-2xl opacity-50 flex flex-col items-center">
         <div className="bg-primary/10 p-4 rounded-full mb-4">
           <ListTodo className="h-10 w-10 text-primary" />
         </div>
@@ -291,92 +294,99 @@ export function TaskList({ tasks }: TaskListProps) {
 
   return (
     <div className="space-y-6">
-      {/* Tabs com visual premium */}
-      <div className="flex bg-muted/40 p-1.5 rounded-[2rem] border max-w-md mx-auto mb-2">
-        <button
-          onClick={() => setActiveTab('active')}
-          className={cn(
-            "flex-1 flex items-center justify-center gap-2 py-3 rounded-[1.5rem] font-bold text-sm uppercase tracking-wider transition-all",
-            activeTab === 'active' 
-              ? "bg-background text-foreground shadow-sm border border-border/50" 
-              : "text-muted-foreground/60 hover:text-foreground"
-          )}
-        >
-          <Clock className="h-4 w-4 shrink-0" />
-          Ativas
-          {activeTasks.length > 0 && (
-            <span className="ml-1.5 bg-primary/15 text-primary px-2 py-0.5 rounded-full text-xs font-black">
-              {activeTasks.length}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab('completed')}
-          className={cn(
-            "flex-1 flex items-center justify-center gap-2 py-3 rounded-[1.5rem] font-bold text-sm uppercase tracking-wider transition-all",
-            activeTab === 'completed' 
-              ? "bg-background text-green-500 shadow-sm border border-border/50" 
-              : "text-muted-foreground/60 hover:text-foreground"
-          )}
-        >
-          <CheckCircle2 className="h-4 w-4 shrink-0" />
-          Concluídas
-          {completedTasks.length > 0 && (
-            <span className="ml-1.5 bg-green-500/10 text-green-500 px-2 py-0.5 rounded-full text-xs font-black">
-              {completedTasks.length}
-            </span>
-          )}
-        </button>
-      </div>
+      {/* Conteúdo Principal */}
+      <div className="space-y-6">
+        {/* Tabs com visual premium */}
+        <div className="flex bg-muted/40 p-1.5 rounded-2xl border max-w-md mx-auto mb-2">
+          <button
+            onClick={() => setActiveTab('active')}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm uppercase tracking-wider transition-all",
+              activeTab === 'active' 
+                ? "bg-background text-foreground shadow-sm border border-border/50" 
+                : "text-muted-foreground/60 hover:text-foreground"
+            )}
+          >
+            <Clock className="h-4 w-4 shrink-0" />
+            Ativas
+            {activeTasks.length > 0 && (
+              <span className="ml-1.5 bg-primary/15 text-primary px-2 py-0.5 rounded-full text-xs font-black">
+                {activeTasks.length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('completed')}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm uppercase tracking-wider transition-all",
+              activeTab === 'completed' 
+                ? "bg-background text-green-500 shadow-sm border border-border/50" 
+                : "text-muted-foreground/60 hover:text-foreground"
+            )}
+          >
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
+            Concluídas
+            {completedTasks.length > 0 && (
+              <span className="ml-1.5 bg-green-500/10 text-green-500 px-2 py-0.5 rounded-full text-xs font-black">
+                {completedTasks.length}
+              </span>
+            )}
+          </button>
+        </div>
 
-      {/* Conteúdo das abas */}
-      <div className="space-y-4" role="list" aria-label="Lista de Tarefas">
-        {activeTab === 'active' ? (
-          /* Aba: Ativas */
-          activeTasks.length === 0 ? (
-            <div className="text-center py-16 border-2 border-dashed rounded-[3rem] opacity-50 flex flex-col items-center">
-              <Sparkles className="h-10 w-10 text-primary mb-3" />
-              <h3 className="text-lg font-bold mb-1">Nenhuma Tarefa Ativa!</h3>
-              <p className="text-xs font-medium max-w-xs mx-auto">Parabéns! Todas as tarefas marcadas como ativas foram concluídas.</p>
-            </div>
-          ) : (
-            activeTasks.map((task) => renderTaskCard(task))
-          )
-        ) : (
-          /* Aba: Concluídas (Separadas por Data) */
-          completedTasks.length === 0 ? (
-            <div className="text-center py-16 border-2 border-dashed rounded-[3rem] opacity-50 flex flex-col items-center">
-              <FolderCheck className="h-10 w-10 text-green-500 mb-3" />
-              <h3 className="text-lg font-bold mb-1">Nenhuma Tarefa Concluída!</h3>
-              <p className="text-xs font-medium max-w-xs mx-auto">Conclua alguma tarefa para visualizá-la no histórico.</p>
-            </div>
-          ) : (
-            sortedGroupDates.map((dateGroup) => (
-              <div key={dateGroup} className="space-y-3">
-                {/* Divisor de data super polido */}
-                <div className="pt-4 pb-1 first:pt-0">
-                  <div className="flex items-center gap-3">
-                    <CalendarDays className="h-4 w-4 text-green-500/70 shrink-0" />
-                    <span className="text-xs font-black uppercase tracking-[0.2em] text-green-600 dark:text-green-400 bg-green-500/10 dark:bg-green-500/20 px-3 py-1 rounded-full shrink-0">
-                      {formatGroupHeaderDate(dateGroup)}
-                    </span>
-                    <div className="h-[1px] flex-1 bg-gradient-to-r from-green-500/20 to-transparent" />
-                  </div>
-                </div>
-
-                {completedGroups[dateGroup].map((task) => renderTaskCard(task))}
+        {/* Conteúdo das abas */}
+        <div className="space-y-4" role="list" aria-label="Lista de Tarefas">
+          {activeTab === 'active' ? (
+            /* Aba: Ativas */
+            activeTasks.length === 0 ? (
+              <div className="text-center py-16 border-2 border-dashed rounded-2xl opacity-50 flex flex-col items-center">
+                <Sparkles className="h-10 w-10 text-primary mb-3" />
+                <h3 className="text-lg font-bold mb-1">Nenhuma Tarefa Ativa!</h3>
+                <p className="text-xs font-medium max-w-xs mx-auto">
+                  Parabéns! Todas as tarefas marcadas como ativas foram concluídas.
+                </p>
               </div>
-            ))
-          )
-        )}
+            ) : (
+              activeTasks.map((task) => renderTaskCard(task))
+            )
+          ) : (
+            /* Aba: Concluídas (Separadas por Data) */
+            completedTasks.length === 0 ? (
+              <div className="text-center py-16 border-2 border-dashed rounded-2xl opacity-50 flex flex-col items-center">
+                <FolderCheck className="h-10 w-10 text-green-500 mb-3" />
+                <h3 className="text-lg font-bold mb-1">Nenhuma Tarefa Concluída!</h3>
+                <p className="text-xs font-medium max-w-xs mx-auto">
+                  Conclua alguma tarefa para visualizá-la no histórico.
+                </p>
+              </div>
+            ) : (
+              sortedGroupDates.map((dateGroup) => (
+                <div key={dateGroup} className="space-y-3">
+                  {/* Divisor de data super polido */}
+                  <div className="pt-4 pb-1 first:pt-0">
+                    <div className="flex items-center gap-3">
+                      <CalendarDays className="h-4 w-4 text-green-500/70 shrink-0" />
+                      <span className="text-xs font-black uppercase tracking-[0.2em] text-green-600 dark:text-green-400 bg-green-500/10 dark:bg-green-500/20 px-3 py-1 rounded-full shrink-0">
+                        {formatGroupHeaderDate(dateGroup)}
+                      </span>
+                      <div className="h-[1px] flex-1 bg-gradient-to-r from-green-500/20 to-transparent" />
+                    </div>
+                  </div>
+
+                  {completedGroups[dateGroup].map((task) => renderTaskCard(task))}
+                </div>
+              ))
+            )
+          )}
+        </div>
       </div>
 
       {/* Modal de CRUD da Tarefa */}
       <Dialog open={!!selectedTask} onOpenChange={() => setSelectedTask(null)}>
-        <DialogContent className="sm:max-w-[480px] rounded-[2.5rem] p-6 gap-6 border-none shadow-3xl overscroll-behavior-contain max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[480px] rounded-2xl p-6 gap-6 border-none shadow-3xl overscroll-behavior-contain max-h-[90vh] overflow-y-auto">
           <DialogHeader className="space-y-4">
             <div className="flex items-center justify-between">
-              <div className="bg-primary/5 w-12 h-12 rounded-2xl flex items-center justify-center text-primary">
+              <div className="bg-primary/5 w-12 h-12 rounded-xl flex items-center justify-center text-primary">
                 <CircleDashed className="h-6 w-6 animate-spin-slow" />
               </div>
               <span className="text-[10px] font-black uppercase tracking-[0.2em] bg-muted/60 px-3 py-1 rounded-full text-muted-foreground">
@@ -478,43 +488,6 @@ export function TaskList({ tasks }: TaskListProps) {
                 })}
               </div>
             </div>
-
-            {/* Complexidade */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/75 px-1">Complexidade</label>
-              <div className="grid grid-cols-3 gap-1.5">
-                {(['Alta', 'Média', 'Baixa'] as const).map((comp) => {
-                  const compColors = {
-                    Alta: 'bg-purple-500/10 text-purple-500 border-purple-500/20 active:bg-purple-500 active:text-white',
-                    Média: 'bg-green-500/10 text-green-500 border-green-500/20 active:bg-green-500 active:text-white',
-                    Baixa: 'bg-slate-500/10 text-slate-500 border-slate-500/20 active:bg-slate-500 active:text-white',
-                  };
-                  
-                  const activeCompColors = {
-                    Alta: 'bg-purple-500 text-white border-purple-500 shadow-sm',
-                    Média: 'bg-green-500 text-white border-green-500 shadow-sm',
-                    Baixa: 'bg-slate-500 text-white border-slate-500 shadow-sm',
-                  };
-
-                  const isSelected = editComplexidade === comp;
-
-                  return (
-                    <button
-                      key={comp}
-                      type="button"
-                      onClick={() => setEditComplexidade(comp)}
-                      className={cn(
-                        "py-2.5 rounded-xl text-xs font-black uppercase tracking-wider border transition-all active:scale-95 shrink-0",
-                        isSelected ? activeCompColors[comp] : compColors[comp]
-                      )}
-                    >
-                      {comp}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
             {/* Status Selection */}
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/75 px-1">Status do Progresso</label>
@@ -551,7 +524,7 @@ export function TaskList({ tasks }: TaskListProps) {
                   placeholder="Explique o que foi feito ou o que falta…"
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
-                  className="rounded-2xl border-none bg-muted/40 focus-visible:bg-background h-20 font-medium"
+                  className="rounded-xl border-none bg-muted/40 focus-visible:bg-background h-20 font-medium"
                 />
               </div>
             )}
@@ -559,7 +532,7 @@ export function TaskList({ tasks }: TaskListProps) {
 
           <DialogFooter className="flex flex-col gap-2 pt-2 border-t">
             {confirmDelete ? (
-              <div className="w-full bg-red-500/5 border border-red-500/20 p-4 rounded-2xl space-y-3 animate-in zoom-in-95">
+              <div className="w-full bg-red-500/5 border border-red-500/20 p-4 rounded-xl space-y-3 animate-in zoom-in-95">
                 <div className="flex items-start gap-2.5">
                   <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
                   <div>
@@ -588,7 +561,7 @@ export function TaskList({ tasks }: TaskListProps) {
             ) : (
               <div className="flex flex-col gap-2 w-full">
                 <Button
-                  className="w-full h-14 rounded-2xl text-base font-black uppercase tracking-widest shadow-xl shadow-primary/20 transition-transform active:scale-95"
+                  className="w-full h-14 rounded-xl text-base font-black uppercase tracking-widest shadow-xl shadow-primary/20 transition-transform active:scale-95"
                   onClick={handleUpdateTask}
                   disabled={isPending || !editTarefa.trim() || (tempStatus === 'Parcial' && !comment.trim())}
                 >

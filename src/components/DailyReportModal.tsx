@@ -81,7 +81,7 @@ export function DailyReportModal() {
           </div>
       </DialogTrigger>
       <DialogContent 
-        className="sm:max-w-lg rounded-[2.5rem] p-0 overflow-hidden border-none shadow-3xl overscroll-behavior-contain flex flex-col max-h-[90vh]"
+        className="sm:max-w-lg rounded-xl p-0 overflow-hidden border-none shadow-3xl overscroll-behavior-contain flex flex-col max-h-[90vh]"
         aria-describedby="report-description"
       >
         <div className="bg-primary p-8 text-primary-foreground relative overflow-hidden shrink-0">
@@ -93,21 +93,21 @@ export function DailyReportModal() {
         <div className="p-6 md:p-8 space-y-8 bg-background overflow-y-auto flex-1 custom-scrollbar">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 space-y-4" aria-live="polite">
-              <div className="h-12 w-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-              <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Gerando Resumo…</p>
+               <div className="h-12 w-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+               <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Gerando Resumo…</p>
             </div>
           ) : report ? (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="grid grid-cols-3 gap-3 md:gap-4">
-                <div className="bg-green-500/5 p-4 rounded-3xl border border-green-500/10 text-center">
+                <div className="bg-green-500/5 p-4 rounded-xl border border-green-500/10 text-center">
                   <p className="text-[9px] font-black text-green-600 uppercase tracking-widest mb-1">Fitas</p>
                   <p className="text-3xl font-black text-green-600 tracking-tighter tabular-nums">{report.completedCount}</p>
                 </div>
-                <div className="bg-orange-500/5 p-4 rounded-3xl border border-orange-500/10 text-center">
+                <div className="bg-orange-500/5 p-4 rounded-xl border border-orange-500/10 text-center">
                   <p className="text-[9px] font-black text-orange-600 uppercase tracking-widest mb-1">Pausas</p>
                   <p className="text-3xl font-black text-orange-600 tracking-tighter tabular-nums">{report.partialCount}</p>
                 </div>
-                <div className="bg-muted/40 p-4 rounded-3xl border border-primary/5 text-center">
+                <div className="bg-muted/40 p-4 rounded-xl border border-primary/5 text-center">
                   <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-1">Abertas</p>
                   <p className="text-3xl font-black text-muted-foreground tracking-tighter tabular-nums">{report.pendingCount}</p>
                 </div>
@@ -120,7 +120,7 @@ export function DailyReportModal() {
                 </h3>
                 <div className="space-y-4">
                   {report.tasks.map((task) => (
-                    <div key={task.id} className="bg-muted/30 p-5 rounded-3xl border border-transparent hover:border-primary/10 transition-all space-y-4">
+                    <div key={task.id} className="bg-muted/30 p-5 rounded-xl border border-transparent hover:border-primary/10 transition-all space-y-4">
                       <p className="font-bold text-sm md:text-base truncate">{task.tarefa}</p>
                       <div className="flex gap-2">
                         {[
@@ -139,7 +139,7 @@ export function DailyReportModal() {
                               }
                             }}
                             className={cn(
-                              "flex-1 flex flex-col items-center gap-1.5 p-2.5 rounded-2xl border transition-all",
+                              "flex-1 flex flex-col items-center gap-1.5 p-2.5 rounded-lg border transition-all",
                               task.status === s.id 
                                 ? "bg-background border-primary/20 shadow-sm" 
                                 : "bg-transparent border-transparent opacity-40 hover:opacity-100"
@@ -157,11 +157,11 @@ export function DailyReportModal() {
                             placeholder="Descreva o progresso parcial…"
                             value={comment}
                             onChange={(e) => setComment(e.target.value)}
-                            className="rounded-2xl border-none bg-background h-20 text-xs font-medium"
+                            className="rounded-lg border-none bg-background h-20 text-xs font-medium"
                           />
                           <Button 
                             size="sm"
-                            className="w-full rounded-xl h-10 font-black text-[10px] uppercase tracking-widest"
+                            className="w-full rounded-lg h-10 font-black text-[10px] uppercase tracking-widest"
                             onClick={() => handleStatusUpdate(task.id, 'Parcial', comment)}
                             disabled={isUpdating || !comment.trim()}
                           >
@@ -171,7 +171,7 @@ export function DailyReportModal() {
                       )}
                       
                       {task.status === 'Parcial' && task.comentario && editingTaskId !== task.id && (
-                        <div className="flex items-start gap-2 bg-background/50 p-3 rounded-xl border border-orange-500/10">
+                        <div className="flex items-start gap-2 bg-background/50 p-3 rounded-lg border border-orange-500/10">
                            <MessageSquarePlus className="h-3 w-3 text-orange-500 mt-0.5 shrink-0" />
                            <p className="text-[10px] font-medium text-muted-foreground italic line-clamp-2">{task.comentario}</p>
                         </div>
@@ -181,8 +181,8 @@ export function DailyReportModal() {
                 </div>
               </div>
 
-              <div className="bg-primary/5 rounded-3xl p-6 flex items-center gap-4 border border-primary/10">
-                <div className="bg-primary/10 p-3 rounded-2xl">
+              <div className="bg-primary/5 rounded-xl p-6 flex items-center gap-4 border border-primary/10">
+                <div className="bg-primary/10 p-3 rounded-lg">
                   <Coffee className="h-6 w-6 text-primary" />
                 </div>
                 <div className="text-sm">
@@ -202,7 +202,7 @@ export function DailyReportModal() {
         <DialogFooter className="p-6 md:p-8 border-t bg-muted/10 shrink-0">
           <Button 
             type="button" 
-            className="w-full h-14 rounded-2xl text-base font-black uppercase tracking-widest shadow-xl shadow-primary/20 transition-transform active:scale-95"
+            className="w-full h-14 rounded-xl text-base font-black uppercase tracking-widest shadow-xl shadow-primary/20 transition-transform active:scale-95"
             onClick={() => setOpen(false)}
           >
             Fechar Relatório

@@ -28,6 +28,18 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
   const [activeTab, setActiveTab] = React.useState<'resumo' | 'pendentes' | 'concluidas'>('resumo');
   const [searchQuery, setSearchQuery] = React.useState('');
   const [copied, setCopied] = React.useState(false);
+  const [printFilter, setPrintFilter] = React.useState<'todas' | 'pendentes' | 'parciais' | 'concluidas'>('todas');
+
+  // Sincronizar o filtro de impressão/cópia com a aba ativa
+  React.useEffect(() => {
+    if (activeTab === 'resumo') {
+      setPrintFilter('todas');
+    } else if (activeTab === 'pendentes') {
+      setPrintFilter('pendentes');
+    } else if (activeTab === 'concluidas') {
+      setPrintFilter('concluidas');
+    }
+  }, [activeTab]);
 
   // 1. Ouvinte de evento customizado para disparar a abertura a partir de outros botões (ex: cabeçalho)
   React.useEffect(() => {
@@ -152,38 +164,56 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
     let reportText = `============================================================\n`;
     reportText += `       ✓ TAREFASIMPLES - GESTÃO & PRODUTIVIDADE\n`;
     reportText += `============================================================\n`;
-    reportText += `            RELATÓRIO CONSOLIDADO DE ATIVIDADES\n`;
+    if (printFilter === 'pendentes') {
+      reportText += `            RELATÓRIO DE TAREFAS PENDENTES\n`;
+    } else if (printFilter === 'parciais') {
+      reportText += `            RELATÓRIO DE TAREFAS EM PROGRESSO\n`;
+    } else if (printFilter === 'concluidas') {
+      reportText += `            RELATÓRIO DE TAREFAS CONCLUÍDAS\n`;
+    } else {
+      reportText += `            RELATÓRIO CONSOLIDADO DE ATIVIDADES\n`;
+    }
     reportText += `------------------------------------------------------------\n`;
     reportText += `Gerado em: ${today}\n`;
     reportText += `------------------------------------------------------------\n\n`;
 
-    reportText += `📊 MÉTRICAS DE DESEMPENHO:\n`;
-    reportText += `  • Total de Tarefas: ${totalCount}\n`;
-    reportText += `  • Concluídas: ${completedCount} (${completionRate}% de taxa de conclusão)\n`;
-    reportText += `  • Em Progresso (Parciais): ${partialCount}\n`;
-    reportText += `  • Pendentes: ${pendingCount}\n`;
-    if (completedCount > 0) {
-      reportText += `  • Tempo Médio de Conclusão: ${averageCompletionTime} dia(s) por tarefa\n`;
-    }
-    reportText += `\n`;
+    const sortByDateOldestToNewest = (a: typeof tasks[0], b: typeof tasks[0]) => {
+      const timeA = a.data_criacao ? new Date(a.data_criacao).getTime() : (a.data ? new Date(a.data).getTime() : 0);
+      const timeB = b.data_criacao ? new Date(b.data_criacao).getTime() : (b.data ? new Date(b.data).getTime() : 0);
+      return timeA - timeB;
+    };
 
-    reportText += `🚨 STATUS DE PRIORIDADES ATIVAS:\n`;
-    reportText += `  • Urgente: ${priorityStats.Urgente} | • Alta: ${priorityStats.Alta} | • Média: ${priorityStats.Média} | • Baixa: ${priorityStats.Baixa}\n\n`;
+    const sortByCompletionOldestToNewest = (a: typeof tasks[0], b: typeof tasks[0]) => {
+      const timeA = a.data_conclusao ? new Date(a.data_conclusao).getTime() : (a.data ? new Date(a.data).getTime() : 0);
+      const timeB = b.data_conclusao ? new Date(b.data_conclusao).getTime() : (b.data ? new Date(b.data).getTime() : 0);
+      return timeA - timeB;
+    };
 
-    const pendingAndPartial = tasks.filter(t => t.status !== 'Concluída');
-    if (pendingAndPartial.length > 0) {
+    const pendingTasksSorted = tasks.filter(t => t.status === 'Pendente').sort(sortByDateOldestToNewest);
+    const partialTasksSorted = tasks.filter(t => t.status === 'Parcial').sort(sortByDateOldestToNewest);
+    const completedTasksSorted = completedTasks.sort(sortByCompletionOldestToNewest);
+
+    if ((printFilter === 'todas' || printFilter === 'parciais') && partialTasksSorted.length > 0) {
       reportText += `============================================================\n`;
-      reportText += `⚠️ TAREFAS ATIVAS & EM PROGRESSO (${pendingAndPartial.length})\n`;
+      reportText += `⏳ TAREFAS EM PROGRESSO (${partialTasksSorted.length})\n`;
       reportText += `============================================================\n`;
-      pendingAndPartial.forEach((t, i) => {
+      
+      let lastDate = '';
+      partialTasksSorted.forEach((t, i) => {
         const priority = t.prioridade ? `[${t.prioridade.toUpperCase()}]` : '[MÉDIA]';
-        const complexity = t.complexidade ? `Complexidade: ${t.complexidade}` : 'Complexidade: Média';
-        const elapsed = t.data_criacao ? `Criada: ${getTimeElapsed(t.data_criacao)}` : '';
-        const status = t.status === 'Parcial' ? '[EM PROGRESSO] ' : '[PENDENTE] ';
-        const assignee = t.responsavel ? ` | • Responsável: ${t.responsavel}` : '';
+        
+        const taskDate = t.data_criacao ? t.data_criacao.split('T')[0] : (t.data || '');
+        const formattedTaskDate = taskDate ? formatDate(taskDate) : 'Sem data';
 
-        reportText += `[${i + 1}] ${status}${priority} ${t.tarefa}\n`;
-        reportText += `    • ${complexity} | • ${elapsed}${assignee}\n`;
+        if (taskDate !== lastDate) {
+          lastDate = taskDate;
+          reportText += `\n📅 ${formattedTaskDate.toUpperCase()}\n`;
+        }
+
+        reportText += `[${i + 1}] ${priority} ${t.tarefa}\n`;
+        if (t.responsavel) {
+          reportText += `    • Responsável: ${t.responsavel}\n`;
+        }
         if (t.comentario) {
           reportText += `    ↳ Nota Interna: "${t.comentario}"\n`;
         }
@@ -192,11 +222,42 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
       reportText += `\n`;
     }
 
-    if (completedTasks.length > 0) {
+    if ((printFilter === 'todas' || printFilter === 'pendentes') && pendingTasksSorted.length > 0) {
       reportText += `============================================================\n`;
-      reportText += `✅ TAREFAS CONCLUÍDAS RECENTEMENTE (${completedTasks.length})\n`;
+      reportText += `⚠️ TAREFAS PENDENTES (${pendingTasksSorted.length})\n`;
       reportText += `============================================================\n`;
-      completedTasks.forEach((t, i) => {
+      
+      let lastDate = '';
+      pendingTasksSorted.forEach((t, i) => {
+        const priority = t.prioridade ? `[${t.prioridade.toUpperCase()}]` : '[MÉDIA]';
+
+        const taskDate = t.data_criacao ? t.data_criacao.split('T')[0] : (t.data || '');
+        const formattedTaskDate = taskDate ? formatDate(taskDate) : 'Sem data';
+
+        if (taskDate !== lastDate) {
+          lastDate = taskDate;
+          reportText += `\n📅 ${formattedTaskDate.toUpperCase()}\n`;
+        }
+
+        reportText += `[${i + 1}] ${priority} ${t.tarefa}\n`;
+        if (t.responsavel) {
+          reportText += `    • Responsável: ${t.responsavel}\n`;
+        }
+        if (t.comentario) {
+          reportText += `    ↳ Nota Interna: "${t.comentario}"\n`;
+        }
+        reportText += `------------------------------------------------------------\n`;
+      });
+      reportText += `\n`;
+    }
+
+    if ((printFilter === 'todas' || printFilter === 'concluidas') && completedTasksSorted.length > 0) {
+      reportText += `============================================================\n`;
+      reportText += `✅ TAREFAS CONCLUÍDAS RECENTEMENTE (${completedTasksSorted.length})\n`;
+      reportText += `============================================================\n`;
+      
+      let lastDate = '';
+      completedTasksSorted.forEach((t, i) => {
         const duration = t.data_criacao && t.data_conclusao ? `Duração: ${getCompletionDuration(t.data_criacao, t.data_conclusao)}` : 'Duração: Mesmo dia';
         const dateStr = t.data_conclusao ? formatDate(t.data_conclusao) : formatDate(t.data);
         const assignee = t.responsavel ? ` | • Responsável: ${t.responsavel}` : '';
@@ -226,131 +287,157 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
       minute: '2-digit'
     }).format(new Date());
 
-    const pendingAndPartial = tasks.filter(t => t.status !== 'Concluída');
-    let pendingAndPartialListHTML = '';
-    if (pendingAndPartial.length === 0) {
-      pendingAndPartialListHTML = '<p style="font-size: 13px; color: #64748B; font-style: italic; margin-top: 10px;">Nenhuma tarefa ativa no momento.</p>';
-    } else {
-      pendingAndPartialListHTML = `
-        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+    const pendingTasks = tasks.filter(t => t.status === 'Pendente');
+    const partialTasks = tasks.filter(t => t.status === 'Parcial');
+
+    // Helper para gerar tabelas de tarefas no HTML de impressão
+    const renderPrintTable = (taskList: typeof tasks) => {
+      if (taskList.length === 0) {
+        return '<p style="font-size: 13px; color: #64748B; font-style: italic; margin-top: 10px; margin-bottom: 20px;">Nenhuma tarefa nesta categoria.</p>';
+      }
+
+      const sortedList = [...taskList].sort((a, b) => {
+        const timeA = a.data_criacao ? new Date(a.data_criacao).getTime() : (a.data ? new Date(a.data).getTime() : 0);
+        const timeB = b.data_criacao ? new Date(b.data_criacao).getTime() : (b.data ? new Date(b.data).getTime() : 0);
+        return timeA - timeB;
+      });
+
+      return `
+        <table style="width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px;">
           <thead>
             <tr style="background: #F8FAFC; border-bottom: 2px solid #E2E8F0; text-align: left;">
               <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; width: 40px;">ID</th>
               <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase;">Tarefa / Descrição</th>
-              <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; text-align: center; width: 100px;">Status</th>
               <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; text-align: center; width: 100px;">Prioridade</th>
-              <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; text-align: center; width: 100px;">Complexidade</th>
               <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; text-align: center; width: 110px;">Responsável</th>
-              <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; text-align: right; width: 120px;">Criada em</th>
             </tr>
           </thead>
           <tbody>
-            ${pendingAndPartial.map((t, idx) => {
-        const priorityColors: Record<string, string> = {
-          'Urgente': 'background: #FEE2E2; color: #991B1B;',
-          'Alta': 'background: #FFEDD5; color: #9A3412;',
-          'Média': 'background: #DBEAFE; color: #1E40AF;',
-          'Baixa': 'background: #F1F5F9; color: #334155;'
-        };
-        const prioStyle = priorityColors[t.prioridade || 'Média'] || priorityColors['Média'];
+            ${(() => {
+              let lastDate = '';
+              return sortedList.map((t, idx) => {
+                const priorityColors: Record<string, string> = {
+                  'Urgente': 'background: #FEE2E2; color: #991B1B;',
+                  'Alta': 'background: #FFEDD5; color: #9A3412;',
+                  'Média': 'background: #DBEAFE; color: #1E40AF;',
+                  'Baixa': 'background: #F1F5F9; color: #334155;'
+                };
+                const prioStyle = priorityColors[t.prioridade || 'Média'] || priorityColors['Média'];
 
-        const compColors: Record<string, string> = {
-          'Alta': 'background: #FAF5FF; color: #6B21A8; border: 1px solid #E9D5FF;',
-          'Média': 'background: #F0FDF4; color: #166534; border: 1px solid #BBF7D0;',
-          'Baixa': 'background: #F2F4F7; color: #344054; border: 1px solid #E4E7EC;'
-        };
-        const compStyle = compColors[t.complexidade || 'Média'] || compColors['Média'];
+                const nameStyles: Record<string, string> = {
+                  'Amanda': 'background: #F3E8FF; color: #6B21A8; border: 1px solid #E9D5FF;',
+                  'Bárbara': 'background: #FCE7F3; color: #9D174D; border: 1px solid #FBCFE8;',
+                  'Daisy': 'background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A;'
+                };
+                const nameStyle = t.responsavel ? (nameStyles[t.responsavel] || 'background: #F1F5F9; color: #475569;') : 'background: transparent; color: #94A3B8;';
 
-        const statusLabel = t.status === 'Parcial' ? 'Em Progresso' : 'Pendente';
-        const statusBg = t.status === 'Parcial' ? 'background: #FEF3C7; color: #92400E;' : 'background: #F1F5F9; color: #475569;';
+                const taskDate = t.data_criacao ? t.data_criacao.split('T')[0] : (t.data || '');
+                const formattedTaskDate = taskDate ? formatDate(taskDate) : 'Sem data';
 
-        const nameStyles: Record<string, string> = {
-          'Amanda': 'background: #F3E8FF; color: #6B21A8; border: 1px solid #E9D5FF;',
-          'Bárbara': 'background: #FCE7F3; color: #9D174D; border: 1px solid #FBCFE8;',
-          'Daisy': 'background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A;'
-        };
-        const nameStyle = t.responsavel ? (nameStyles[t.responsavel] || 'background: #F1F5F9; color: #475569;') : 'background: transparent; color: #94A3B8;';
+                let dateDividerRow = '';
+                if (taskDate !== lastDate) {
+                  lastDate = taskDate;
+                  dateDividerRow = `
+                    <tr style="background: #F1F5F9; border-bottom: 1px solid #E2E8F0;">
+                      <td colspan="4" style="padding: 8px 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase;">
+                        📅 ${formattedTaskDate}
+                      </td>
+                    </tr>
+                  `;
+                }
 
-        return `
-                <tr style="border-bottom: 1px solid #F1F5F9;">
-                  <td style="padding: 12px 10px; font-size: 13px; color: #64748B; font-weight: bold;">#${idx + 1}</td>
-                  <td style="padding: 12px 10px; font-size: 13px; font-weight: 600; color: #0F172A;">
-                    ${t.tarefa}
-                    ${t.comentario ? `<div style="font-size: 11px; color: #64748B; font-weight: normal; margin-top: 4px; font-style: italic;">↳ Nota: "${t.comentario}"</div>` : ''}
-                  </td>
-                  <td style="padding: 12px 10px; text-align: center;">
-                    <span style="display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; ${statusBg}">${statusLabel}</span>
-                  </td>
-                  <td style="padding: 12px 10px; text-align: center;">
-                    <span style="display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; ${prioStyle}">${t.prioridade || 'Média'}</span>
-                  </td>
-                  <td style="padding: 12px 10px; text-align: center;">
-                    <span style="display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; ${compStyle}">${t.complexidade || 'Média'}</span>
-                  </td>
-                  <td style="padding: 12px 10px; text-align: center;">
-                    <span style="display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; ${nameStyle}">${t.responsavel || '-'}</span>
-                  </td>
-                  <td style="padding: 12px 10px; text-align: right; font-size: 12px; color: #64748B;">${t.data_criacao ? formatDate(t.data_criacao) : formatDate(t.data)}</td>
-                </tr>
-              `;
-      }).join('')}
+                return `
+                  ${dateDividerRow}
+                  <tr style="border-bottom: 1px solid #F1F5F9;">
+                    <td style="padding: 12px 10px; font-size: 13px; color: #64748B; font-weight: bold;">#${idx + 1}</td>
+                    <td style="padding: 12px 10px; font-size: 13px; font-weight: 600; color: #0F172A;">
+                      ${t.tarefa}
+                      ${t.comentario ? `<div style="font-size: 11px; color: #64748B; font-weight: normal; margin-top: 4px; font-style: italic;">↳ Nota: "${t.comentario}"</div>` : ''}
+                    </td>
+                    <td style="padding: 12px 10px; text-align: center;">
+                      <span style="display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; ${prioStyle}">${t.prioridade || 'Média'}</span>
+                    </td>
+                    <td style="padding: 12px 10px; text-align: center;">
+                      <span style="display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; ${nameStyle}">${t.responsavel || '-'}</span>
+                    </td>
+                  </tr>
+                `;
+              }).join('');
+            })()}
           </tbody>
         </table>
       `;
+    };
+
+    let partialListHTML = '';
+    let pendingListHTML = '';
+    if (printFilter === 'todas' || printFilter === 'parciais') {
+      partialListHTML = renderPrintTable(partialTasks);
+    }
+    if (printFilter === 'todas' || printFilter === 'pendentes') {
+      pendingListHTML = renderPrintTable(pendingTasks);
     }
 
     let completedListHTML = '';
-    if (completedTasks.length === 0) {
-      completedListHTML = '<p style="font-size: 13px; color: #64748B; font-style: italic; margin-top: 10px;">Nenhuma tarefa concluída ainda.</p>';
-    } else {
-      completedListHTML = `
-        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-          <thead>
-            <tr style="background: #F8FAFC; border-bottom: 2px solid #E2E8F0; text-align: left;">
-              <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; width: 40px;">ID</th>
-              <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase;">Tarefa</th>
-              <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; text-align: center; width: 100px;">Prioridade</th>
-              <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; text-align: center; width: 120px;">Duração</th>
-              <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; text-align: center; width: 110px;">Responsável</th>
-              <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; text-align: right; width: 150px;">Concluída em</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${completedTasks.map((t, idx) => {
-        const priorityColors: Record<string, string> = {
-          'Urgente': 'background: #FEE2E2; color: #991B1B;',
-          'Alta': 'background: #FFEDD5; color: #9A3412;',
-          'Média': 'background: #DBEAFE; color: #1E40AF;',
-          'Baixa': 'background: #F1F5F9; color: #334155;'
-        };
-        const prioStyle = priorityColors[t.prioridade || 'Média'] || priorityColors['Média'];
-        const duration = t.data_criacao && t.data_conclusao ? getCompletionDuration(t.data_criacao, t.data_conclusao) : 'Mesmo dia';
+    if (printFilter === 'todas' || printFilter === 'concluidas') {
+      if (completedTasks.length === 0) {
+        completedListHTML = '<p style="font-size: 13px; color: #64748B; font-style: italic; margin-top: 10px;">Nenhuma tarefa concluída ainda.</p>';
+      } else {
+        const sortedCompletedTasks = [...completedTasks].sort((a, b) => {
+          const timeA = a.data_conclusao ? new Date(a.data_conclusao).getTime() : (a.data ? new Date(a.data).getTime() : 0);
+          const timeB = b.data_conclusao ? new Date(b.data_conclusao).getTime() : (b.data ? new Date(b.data).getTime() : 0);
+          return timeA - timeB;
+        });
 
-        const nameStyles: Record<string, string> = {
-          'Amanda': 'background: #F3E8FF; color: #6B21A8; border: 1px solid #E9D5FF;',
-          'Bárbara': 'background: #FCE7F3; color: #9D174D; border: 1px solid #FBCFE8;',
-          'Daisy': 'background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A;'
-        };
-        const nameStyle = t.responsavel ? (nameStyles[t.responsavel] || 'background: #F1F5F9; color: #475569;') : 'background: transparent; color: #94A3B8;';
+        completedListHTML = `
+          <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <thead>
+              <tr style="background: #F8FAFC; border-bottom: 2px solid #E2E8F0; text-align: left;">
+                <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; width: 40px;">ID</th>
+                <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase;">Tarefa</th>
+                <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; text-align: center; width: 100px;">Prioridade</th>
+                <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; text-align: center; width: 120px;">Duração</th>
+                <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; text-align: center; width: 110px;">Responsável</th>
+                <th style="padding: 10px; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; text-align: right; width: 150px;">Concluída em</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${sortedCompletedTasks.map((t, idx) => {
+          const priorityColors: Record<string, string> = {
+            'Urgente': 'background: #FEE2E2; color: #991B1B;',
+            'Alta': 'background: #FFEDD5; color: #9A3412;',
+            'Média': 'background: #DBEAFE; color: #1E40AF;',
+            'Baixa': 'background: #F1F5F9; color: #334155;'
+          };
+          const prioStyle = priorityColors[t.prioridade || 'Média'] || priorityColors['Média'];
+          const duration = t.data_criacao && t.data_conclusao ? getCompletionDuration(t.data_criacao, t.data_conclusao) : 'Mesmo dia';
 
-        return `
-                <tr style="border-bottom: 1px solid #F1F5F9;">
-                  <td style="padding: 12px 10px; font-size: 13px; color: #64748B; font-weight: bold;">#${idx + 1}</td>
-                  <td style="padding: 12px 10px; font-size: 13px; font-weight: 600; color: #0F172A; text-decoration: line-through; opacity: 0.7;">${t.tarefa}</td>
-                  <td style="padding: 12px 10px; text-align: center;">
-                    <span style="display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; ${prioStyle}">${t.prioridade || 'Média'}</span>
-                  </td>
-                  <td style="padding: 12px 10px; text-align: center; font-size: 12px; font-weight: bold; color: #166534;">${duration}</td>
-                  <td style="padding: 12px 10px; text-align: center;">
-                    <span style="display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; ${nameStyle}">${t.responsavel || '-'}</span>
-                  </td>
-                  <td style="padding: 12px 10px; text-align: right; font-size: 12px; color: #64748B;">${t.data_conclusao ? formatDate(t.data_conclusao) : formatDate(t.data)}</td>
-                </tr>
-              `;
-      }).join('')}
-          </tbody>
-        </table>
-      `;
+          const nameStyles: Record<string, string> = {
+            'Amanda': 'background: #F3E8FF; color: #6B21A8; border: 1px solid #E9D5FF;',
+            'Bárbara': 'background: #FCE7F3; color: #9D174D; border: 1px solid #FBCFE8;',
+            'Daisy': 'background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A;'
+          };
+          const nameStyle = t.responsavel ? (nameStyles[t.responsavel] || 'background: #F1F5F9; color: #475569;') : 'background: transparent; color: #94A3B8;';
+
+          return `
+                  <tr style="border-bottom: 1px solid #F1F5F9;">
+                    <td style="padding: 12px 10px; font-size: 13px; color: #64748B; font-weight: bold;">#${idx + 1}</td>
+                    <td style="padding: 12px 10px; font-size: 13px; font-weight: 600; color: #0F172A; text-decoration: line-through; opacity: 0.7;">${t.tarefa}</td>
+                    <td style="padding: 12px 10px; text-align: center;">
+                      <span style="display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; ${prioStyle}">${t.prioridade || 'Média'}</span>
+                    </td>
+                    <td style="padding: 12px 10px; text-align: center; font-size: 12px; font-weight: bold; color: #166534;">${duration}</td>
+                    <td style="padding: 12px 10px; text-align: center;">
+                      <span style="display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; ${nameStyle}">${t.responsavel || '-'}</span>
+                    </td>
+                    <td style="padding: 12px 10px; text-align: right; font-size: 12px; color: #64748B;">${t.data_conclusao ? formatDate(t.data_conclusao) : formatDate(t.data)}</td>
+                  </tr>
+                `;
+        }).join('')}
+            </tbody>
+          </table>
+        `;
+      }
     }
 
     const reportHtml = `
@@ -376,7 +463,12 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
               <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
                 <span style="font-size: 20px; font-weight: 900; letter-spacing: 0.15em; color: #0F172A; text-transform: uppercase;">✓ TarefaSimples</span>
               </div>
-              <h1 style="font-size: 22px; font-weight: 900; color: #0F172A; margin: 0; letter-spacing: -0.03em;">RELATÓRIO CONSOLIDADO DE PRODUTIVIDADE</h1>
+              <h1 style="font-size: 22px; font-weight: 900; color: #0F172A; margin: 0; letter-spacing: -0.03em;">
+                ${printFilter === 'pendentes' ? 'RELATÓRIO DE TAREFAS PENDENTES' : 
+                  printFilter === 'parciais' ? 'RELATÓRIO DE TAREFAS EM PROGRESSO' : 
+                  printFilter === 'concluidas' ? 'RELATÓRIO DE TAREFAS CONCLUÍDAS' : 
+                  'RELATÓRIO CONSOLIDADO DE PRODUTIVIDADE'}
+              </h1>
               <p style="font-size: 12px; color: #64748B; margin: 4px 0 0 0; font-weight: 500;">Controle analítico de pendências, prazos e metas realizadas</p>
             </div>
             <div style="text-align: right;">
@@ -385,71 +477,55 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
             </div>
           </div>
 
-          <!-- KPI Cards Grid (Estatísticas) -->
-          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 35px;">
-            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 16px; padding: 16px; text-align: center;">
-              <span style="font-size: 10px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.1em; display: block;">Total de Tarefas</span>
-              <p style="font-size: 32px; font-weight: 900; color: #0F172A; margin: 6px 0 0 0; letter-spacing: -0.05em;">${totalCount}</p>
-            </div>
-            <div style="background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 16px; padding: 16px; text-align: center;">
-              <span style="font-size: 10px; font-weight: 800; color: #065F46; text-transform: uppercase; letter-spacing: 0.1em; display: block;">Concluídas</span>
-              <p style="font-size: 32px; font-weight: 900; color: #065F46; margin: 6px 0 0 0; letter-spacing: -0.05em;">${completedCount}</p>
-            </div>
-            <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 16px; padding: 16px; text-align: center;">
-              <span style="font-size: 10px; font-weight: 800; color: #1E40AF; text-transform: uppercase; letter-spacing: 0.1em; display: block;">Pendentes / Ativas</span>
-              <p style="font-size: 32px; font-weight: 900; color: #1E40AF; margin: 6px 0 0 0; letter-spacing: -0.05em;">${activeTasksCount}</p>
-            </div>
-            <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 16px; padding: 16px; text-align: center;">
-              <span style="font-size: 10px; font-weight: 800; color: #92400E; text-transform: uppercase; letter-spacing: 0.1em; display: block;">Taxa Conclusão</span>
-              <p style="font-size: 32px; font-weight: 900; color: #92400E; margin: 6px 0 0 0; letter-spacing: -0.05em;">${completionRate}%</p>
-            </div>
-          </div>
 
-          <!-- Distribuição por Prioridade -->
-          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 16px; padding: 20px; margin-bottom: 35px;">
-            <h3 style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #475569; margin: 0 0 15px 0;">Distribuição por Prioridade</h3>
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-                <span style="font-size: 11px; font-weight: 800; color: #DC2626;">🚨 URGENTE</span>
-                <span style="font-size: 16px; font-weight: 900; color: #DC2626;">${priorityStats.Urgente}</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-                <span style="font-size: 11px; font-weight: 800; color: #EA580C;">⚠️ ALTA</span>
-                <span style="font-size: 16px; font-weight: 900; color: #EA580C;">${priorityStats.Alta}</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-                <span style="font-size: 11px; font-weight: 800; color: #2563EB;">🔹 MÉDIA</span>
-                <span style="font-size: 16px; font-weight: 900; color: #2563EB;">${priorityStats.Média}</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-                <span style="font-size: 11px; font-weight: 800; color: #475569;">▫️ BAIXA</span>
-                <span style="font-size: 16px; font-weight: 900; color: #475569;">${priorityStats.Baixa}</span>
-              </div>
-            </div>
-          </div>
 
-          <!-- Tempo Médio -->
-          ${completedCount > 0 ? `
-          <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 16px; padding: 15px 20px; margin-bottom: 35px; display: flex; align-items: center; gap: 15px;">
-            <div style="font-size: 24px;">⚡</div>
-            <div>
-              <p style="margin: 0; font-size: 14px; font-weight: 800; color: #166534; text-transform: uppercase; letter-spacing: 0.05em;">Tempo Médio de Conclusão</p>
-              <p style="margin: 2px 0 0 0; font-size: 13px; color: #14532D; font-weight: 500;">Você está levando em média <strong>${averageCompletionTime} dia(s)</strong> para entregar as tarefas concluídas. Excelente trabalho!</p>
-            </div>
+          <!-- Tarefas Em Progresso (Parciais) -->
+          ${(printFilter === 'todas' || printFilter === 'parciais') && partialTasks.length > 0 ? `
+          <div style="margin-bottom: 40px;">
+            <h2 style="font-size: 15px; font-weight: 900; color: #0F172A; border-left: 4px solid #D97706; padding-left: 10px; margin: 0 0 15px 0; text-transform: uppercase; letter-spacing: -0.01em;">Em Progresso (${partialTasks.length})</h2>
+            ${partialListHTML}
           </div>
           ` : ''}
 
-          <!-- Tarefas Ativas / Pendentes -->
-          <div style="margin-bottom: 40px; page-break-inside: avoid;">
-            <h2 style="font-size: 15px; font-weight: 900; color: #0F172A; border-left: 4px solid #2563EB; padding-left: 10px; margin: 0 0 15px 0; text-transform: uppercase; letter-spacing: -0.01em;">Ativas & Em Progresso (${activeTasksCount})</h2>
-            ${pendingAndPartialListHTML}
+          <!-- Tarefas Pendentes -->
+          ${(printFilter === 'todas' || printFilter === 'pendentes') && pendingTasks.length > 0 ? `
+          <div style="margin-bottom: 40px;">
+            <h2 style="font-size: 15px; font-weight: 900; color: #0F172A; border-left: 4px solid #2563EB; padding-left: 10px; margin: 0 0 15px 0; text-transform: uppercase; letter-spacing: -0.01em;">Pendentes (${pendingTasks.length})</h2>
+            ${pendingListHTML}
           </div>
+          ` : ''}
+
+          <!-- Sem Tarefas em Progresso (quando filtrado especificamente) -->
+          ${printFilter === 'parciais' && partialTasks.length === 0 ? `
+          <div style="margin-bottom: 40px;">
+            <h2 style="font-size: 15px; font-weight: 900; color: #0F172A; border-left: 4px solid #D97706; padding-left: 10px; margin: 0 0 15px 0; text-transform: uppercase; letter-spacing: -0.01em;">Em Progresso (0)</h2>
+            <p style="font-size: 13px; color: #64748B; font-style: italic; margin-top: 10px;">Nenhuma tarefa em progresso no momento.</p>
+          </div>
+          ` : ''}
+
+          <!-- Sem Tarefas Pendentes (quando filtrado especificamente) -->
+          ${printFilter === 'pendentes' && pendingTasks.length === 0 ? `
+          <div style="margin-bottom: 40px;">
+            <h2 style="font-size: 15px; font-weight: 900; color: #0F172A; border-left: 4px solid #2563EB; padding-left: 10px; margin: 0 0 15px 0; text-transform: uppercase; letter-spacing: -0.01em;">Pendentes (0)</h2>
+            <p style="font-size: 13px; color: #64748B; font-style: italic; margin-top: 10px;">Nenhuma tarefa pendente no momento.</p>
+          </div>
+          ` : ''}
+
+          <!-- Sem Tarefas Ativas -->
+          ${printFilter === 'todas' && partialTasks.length === 0 && pendingTasks.length === 0 ? `
+          <div style="margin-bottom: 40px;">
+            <h2 style="font-size: 15px; font-weight: 900; color: #0F172A; border-left: 4px solid #2563EB; padding-left: 10px; margin: 0 0 15px 0; text-transform: uppercase; letter-spacing: -0.01em;">Tarefas Ativas (0)</h2>
+            <p style="font-size: 13px; color: #64748B; font-style: italic; margin-top: 10px;">Nenhuma tarefa ativa no momento.</p>
+          </div>
+          ` : ''}
 
           <!-- Tarefas Concluídas -->
-          <div style="margin-bottom: 40px; page-break-inside: avoid;">
+          ${printFilter === 'todas' || printFilter === 'concluidas' ? `
+          <div style="margin-bottom: 40px;">
             <h2 style="font-size: 15px; font-weight: 900; color: #0F172A; border-left: 4px solid #10B981; padding-left: 10px; margin: 0 0 15px 0; text-transform: uppercase; letter-spacing: -0.01em;">Concluídas Recentemente (${completedTasks.length})</h2>
             ${completedListHTML}
           </div>
+          ` : ''}
 
           <!-- Footer -->
           <div style="text-align: center; border-top: 1px solid #E2E8F0; padding-top: 20px; margin-top: 50px; font-size: 11px; color: #94A3B8; font-weight: 500;">
@@ -534,7 +610,7 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
       </DialogTrigger>
 
       <DialogContent
-        className="sm:max-w-3xl rounded-[2.5rem] p-0 overflow-hidden border-none shadow-3xl overscroll-behavior-contain flex flex-col h-[90vh] max-h-[850px]"
+        className="sm:max-w-3xl rounded-xl p-0 overflow-hidden border-none shadow-3xl overscroll-behavior-contain flex flex-col h-[90vh] max-h-[850px]"
         aria-describedby="general-report-description"
       >
         {/* Header com gradiente elegante (Ultra-Premium) */}
@@ -547,11 +623,29 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
                 Uma visão geral e detalhada de todas as pendências e tarefas concluídas.
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative inline-block text-left">
+                <select
+                  value={printFilter}
+                  onChange={(e) => setPrintFilter(e.target.value as 'todas' | 'pendentes' | 'parciais' | 'concluidas')}
+                  className="appearance-none bg-white/5 hover:bg-white/10 text-white border border-white/10 hover:border-white/20 rounded-lg h-10 pl-3 pr-8 text-xs uppercase tracking-wider font-bold focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer transition-all"
+                  aria-label="Filtro de Impressão e Cópia"
+                >
+                  <option value="todas" className="bg-[#0F172A] text-white">Exportar: Todas</option>
+                  <option value="parciais" className="bg-[#0F172A] text-white">Exportar: Em Progresso</option>
+                  <option value="pendentes" className="bg-[#0F172A] text-white">Exportar: Pendentes</option>
+                  <option value="concluidas" className="bg-[#0F172A] text-white">Exportar: Concluídas</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+                  <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                    <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+                  </svg>
+                </div>
+              </div>
               <Button
                 onClick={handleCopyReport}
                 variant="ghost"
-                className="h-10 px-4 rounded-xl border border-white/10 hover:bg-white/10 hover:text-white font-bold text-xs uppercase tracking-wider gap-1.5"
+                className="h-10 px-4 rounded-lg border border-white/10 hover:bg-white/10 hover:text-white font-bold text-xs uppercase tracking-wider gap-1.5"
               >
                 <Copy className="h-3.5 w-3.5" />
                 {copied ? 'Copiado!' : 'Copiar'}
@@ -559,7 +653,7 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
               <Button
                 onClick={handlePrint}
                 variant="ghost"
-                className="h-10 px-4 rounded-xl border border-white/10 hover:bg-white/10 hover:text-white font-bold text-xs uppercase tracking-wider gap-1.5"
+                className="h-10 px-4 rounded-lg border border-white/10 hover:bg-white/10 hover:text-white font-bold text-xs uppercase tracking-wider gap-1.5"
               >
                 <Printer className="h-3.5 w-3.5" />
                 Imprimir
@@ -606,25 +700,25 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
               <div className="space-y-8 animate-in fade-in duration-300">
                 {/* Grid de Cards de Estatísticas */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-card p-5 rounded-[2rem] border border-primary/5 shadow-sm space-y-2 relative overflow-hidden">
+                  <div className="bg-card p-5 rounded-lg border border-primary/5 shadow-sm space-y-2 relative overflow-hidden">
                     <div className="h-2 w-2 rounded-full bg-slate-400 absolute top-4 right-4" />
                     <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Total de Tarefas</p>
                     <p className="text-4xl font-black tracking-tighter text-foreground">{totalCount}</p>
                   </div>
 
-                  <div className="bg-card p-5 rounded-[2rem] border border-primary/5 shadow-sm space-y-2 relative overflow-hidden">
+                  <div className="bg-card p-5 rounded-lg border border-primary/5 shadow-sm space-y-2 relative overflow-hidden">
                     <div className="h-2 w-2 rounded-full bg-green-500 absolute top-4 right-4" />
                     <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground font-semibold">Concluídas</p>
                     <p className="text-4xl font-black tracking-tighter text-green-500">{completedCount}</p>
                   </div>
 
-                  <div className="bg-card p-5 rounded-[2rem] border border-primary/5 shadow-sm space-y-2 relative overflow-hidden">
+                  <div className="bg-card p-5 rounded-lg border border-primary/5 shadow-sm space-y-2 relative overflow-hidden">
                     <div className="h-2 w-2 rounded-full bg-orange-500 absolute top-4 right-4" />
                     <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Em Progresso (Parcial)</p>
                     <p className="text-4xl font-black tracking-tighter text-orange-500">{partialCount}</p>
                   </div>
 
-                  <div className="bg-card p-5 rounded-[2rem] border border-primary/5 shadow-sm space-y-2 relative overflow-hidden">
+                  <div className="bg-card p-5 rounded-lg border border-primary/5 shadow-sm space-y-2 relative overflow-hidden">
                     <div className="h-2 w-2 rounded-full bg-blue-500 absolute top-4 right-4" />
                     <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Pendentes</p>
                     <p className="text-4xl font-black tracking-tighter text-blue-500">{pendingCount}</p>
@@ -635,7 +729,7 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
                   {/* Taxa de Conclusão */}
-                  <div className="lg:col-span-7 bg-card p-6 rounded-[2.5rem] border border-primary/5 shadow-sm flex flex-col justify-between gap-6">
+                  <div className="lg:col-span-7 bg-card p-6 rounded-xl border border-primary/5 shadow-sm flex flex-col justify-between gap-6">
                     <div className="space-y-1">
                       <h4 className="font-black text-sm uppercase tracking-wider text-primary/60 flex items-center gap-1.5">
                         <TrendingUp className="h-4 w-4" />
@@ -659,7 +753,7 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
                   </div>
 
                   {/* Tempo Médio de Conclusão */}
-                  <div className="lg:col-span-5 bg-card p-6 rounded-[2.5rem] border border-primary/5 shadow-sm flex flex-col justify-between gap-6">
+                  <div className="lg:col-span-5 bg-card p-6 rounded-xl border border-primary/5 shadow-sm flex flex-col justify-between gap-6">
                     <div className="space-y-1">
                       <h4 className="font-black text-sm uppercase tracking-wider text-primary/60 flex items-center gap-1.5">
                         <Clock className="h-4 w-4" />
@@ -684,7 +778,7 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
                 </div>
 
                 {/* Prioridades e Recomendações */}
-                <div className="bg-card p-6 rounded-[2.5rem] border border-primary/5 shadow-sm space-y-6">
+                <div className="bg-card p-6 rounded-xl border border-primary/5 shadow-sm space-y-6">
                   <h4 className="font-black text-sm uppercase tracking-wider text-primary/60 flex items-center gap-1.5">
                     <AlertTriangle className="h-4 w-4 text-orange-500" />
                     Distribuição por Prioridade
@@ -699,7 +793,7 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
                     ].map((p) => {
                       const percentage = totalCount > 0 ? Math.round((p.count / totalCount) * 100) : 0;
                       return (
-                        <div key={p.id} className="bg-muted/30 p-4 rounded-2xl border border-transparent space-y-3">
+                        <div key={p.id} className="bg-muted/30 p-4 rounded-lg border border-transparent space-y-3">
                           <div className="flex justify-between items-center">
                             <span className="font-black text-xs uppercase tracking-wider">{p.id}</span>
                             <span className={cn("text-xs font-black", p.text)}>{p.count}</span>
@@ -714,7 +808,7 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
                 </div>
 
                 {/* Resumo visual do dia */}
-                <div className="bg-[#1E293B] text-slate-100 p-6 rounded-[2.5rem] flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="bg-[#1E293B] text-slate-100 p-6 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
                   <div className="space-y-1">
                     <h4 className="font-black text-sm uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                       <Info className="h-4 w-4 text-sky-400" />
@@ -726,7 +820,7 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
                   </div>
                   <Button
                     onClick={() => setActiveTab('pendentes')}
-                    className="bg-white hover:bg-slate-100 text-slate-900 rounded-2xl font-black text-xs uppercase tracking-wider h-11 px-5 w-fit"
+                    className="bg-white hover:bg-slate-100 text-slate-900 rounded-lg font-black text-xs uppercase tracking-wider h-11 px-5 w-fit"
                   >
                     Ver Pendências
                   </Button>
@@ -745,14 +839,14 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
                     placeholder="Pesquisar nas tarefas ativas..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full h-12 pl-12 pr-4 rounded-2xl border border-primary/10 bg-card text-sm font-medium focus:outline-none focus:border-primary/30"
+                    className="w-full h-12 pl-12 pr-4 rounded-lg border border-primary/10 bg-card text-sm font-medium focus:outline-none focus:border-primary/30"
                   />
                 </div>
 
                 {/* Pending Tasks List */}
                 <div className="space-y-4">
                   {filteredPending.length === 0 ? (
-                    <div className="text-center py-16 bg-card border rounded-[2.5rem] opacity-50 flex flex-col items-center">
+                    <div className="text-center py-16 bg-card border rounded-xl opacity-50 flex flex-col items-center">
                       <CheckCircle2 className="h-10 w-10 text-green-500 mb-3" />
                       <h4 className="font-bold text-lg mb-1">Nenhuma pendência encontrada!</h4>
                       <p className="text-xs max-w-xs mx-auto">Parabéns! Todas as tarefas pesquisadas foram concluídas ou você não tem itens pendentes.</p>
@@ -762,7 +856,7 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
                       <div
                         key={task.id}
                         className={cn(
-                          "bg-card p-5 rounded-[2rem] border border-primary/5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:border-primary/20",
+                          "bg-card p-5 rounded-lg border border-primary/5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:border-primary/20",
                           task.status === 'Parcial' && "border-l-4 border-l-orange-500"
                         )}
                       >
@@ -798,17 +892,10 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
                                 </span>
                               </>
                             )}
-
-                            {task.complexidade && (
-                              <>
-                                <span>•</span>
-                                <span className="text-slate-500">Complexidade: {task.complexidade}</span>
-                              </>
-                            )}
                           </div>
 
                           {task.comentario && (
-                            <div className="bg-muted/40 p-3 rounded-xl border border-primary/5 text-xs text-muted-foreground font-medium italic mt-2">
+                            <div className="bg-muted/40 p-3 rounded-lg border border-primary/5 text-xs text-muted-foreground font-medium italic mt-2">
                               Comentário: "{task.comentario}"
                             </div>
                           )}
@@ -831,14 +918,14 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
                     placeholder="Pesquisar nas concluídas..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full h-12 pl-12 pr-4 rounded-2xl border border-primary/10 bg-card text-sm font-medium focus:outline-none focus:border-primary/30"
+                    className="w-full h-12 pl-12 pr-4 rounded-lg border border-primary/10 bg-card text-sm font-medium focus:outline-none focus:border-primary/30"
                   />
                 </div>
 
                 {/* Completed Tasks List */}
                 <div className="space-y-4">
                   {filteredCompleted.length === 0 ? (
-                    <div className="text-center py-16 bg-card border rounded-[2.5rem] opacity-50 flex flex-col items-center">
+                    <div className="text-center py-16 bg-card border rounded-xl opacity-50 flex flex-col items-center">
                       <Clock className="h-10 w-10 text-muted-foreground mb-3" />
                       <h4 className="font-bold text-lg mb-1">Nenhuma tarefa concluída!</h4>
                       <p className="text-xs max-w-xs mx-auto">Nenhuma tarefa marcada como concluída foi encontrada no seu histórico.</p>
@@ -847,7 +934,7 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
                     filteredCompleted.map((task) => (
                       <div
                         key={task.id}
-                        className="bg-card p-5 rounded-[2rem] border border-primary/5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:border-primary/20 opacity-90"
+                        className="bg-card p-5 rounded-lg border border-primary/5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:border-primary/20 opacity-90"
                       >
                         <div className="space-y-2 flex-1 min-w-0">
                           <p className="font-bold text-lg text-foreground line-through opacity-60 truncate">{task.tarefa}</p>
@@ -894,7 +981,7 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
         <DialogFooter className="p-6 md:p-8 border-t bg-muted/10 shrink-0">
           <Button
             type="button"
-            className="w-full h-14 rounded-2xl text-base font-black uppercase tracking-widest shadow-xl shadow-primary/20 transition-transform active:scale-95"
+            className="w-full h-14 rounded-lg text-base font-black uppercase tracking-widest shadow-xl shadow-primary/20 transition-transform active:scale-95"
             onClick={() => setOpen(false)}
           >
             Fechar Relatório

@@ -4,7 +4,7 @@ import { addTask } from '@/actions/tasks';
 import { useState, useTransition, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Zap, ShieldAlert, User } from 'lucide-react';
+import { Plus, Search, ShieldAlert, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AddTaskFormProps {
@@ -15,7 +15,6 @@ export function AddTaskForm({ history }: AddTaskFormProps) {
   const [query, setQuery] = useState('');
   const [isPending, startTransition] = useTransition();
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [complexity, setComplexity] = useState<'Baixa' | 'Média' | 'Alta'>('Média');
   const [priority, setPriority] = useState<'Baixa' | 'Média' | 'Alta' | 'Urgente'>('Média');
   const [responsavel, setResponsavel] = useState<'Amanda' | 'Bárbara' | 'Daisy'>('Amanda');
   const [mounted, setMounted] = useState(false);
@@ -66,7 +65,7 @@ export function AddTaskForm({ history }: AddTaskFormProps) {
     if (!taskName.trim()) return;
     
     startTransition(async () => {
-      await addTask(taskName, complexity, priority, responsavel);
+      await addTask(taskName, 'Média', priority, responsavel);
       setQuery('');
       setShowSuggestions(false);
     });
@@ -89,13 +88,13 @@ export function AddTaskForm({ history }: AddTaskFormProps) {
           }}
           onFocus={() => setShowSuggestions(true)}
           placeholder="O que vamos realizar hoje?"
-          className="h-16 md:h-20 pl-16 pr-32 rounded-[2rem] border-none bg-card/80 backdrop-blur-xl shadow-2xl shadow-primary/5 text-lg md:text-xl font-bold placeholder:text-muted-foreground/40 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
+          className="h-16 md:h-20 pl-16 pr-32 rounded-xl border-none bg-card/80 backdrop-blur-xl shadow-2xl shadow-primary/5 text-lg md:text-xl font-bold placeholder:text-muted-foreground/40 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
         />
         <div className="absolute right-3 top-1/2 -translate-y-1/2">
            <Button 
              onClick={() => handleSubmit(query)}
              disabled={isPending || !query.trim()}
-             className="h-10 md:h-14 px-6 md:px-8 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-primary/20"
+             className="h-10 md:h-14 px-6 md:px-8 rounded-lg font-black uppercase tracking-widest text-xs shadow-lg shadow-primary/20"
            >
              {isPending ? '...' : 'Adicionar'}
            </Button>
@@ -104,7 +103,7 @@ export function AddTaskForm({ history }: AddTaskFormProps) {
 
       {/* Sugestões */}
       {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute top-[5rem] md:top-[6rem] left-0 right-0 z-50 bg-card/90 backdrop-blur-2xl border rounded-[2rem] shadow-3xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="absolute top-[5rem] md:top-[6rem] left-0 right-0 z-50 bg-card/90 backdrop-blur-2xl border rounded-xl shadow-3xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
            <div className="p-2">
               {suggestions.map((item, i) => (
                 <button
@@ -124,7 +123,7 @@ export function AddTaskForm({ history }: AddTaskFormProps) {
       )}
 
       {/* Seletores de Atributos em Grid Simétrico */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-2">
          {/* Responsável (Amanda, Bárbara, Daisy) */}
          <div className="space-y-3">
             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 px-1 flex items-center gap-2">
@@ -138,7 +137,7 @@ export function AddTaskForm({ history }: AddTaskFormProps) {
                    type="button"
                    onClick={() => setResponsavel(name)}
                    className={cn(
-                     "flex-1 h-12 rounded-2xl font-bold text-[10px] uppercase tracking-widest transition-all border-2 active:scale-95",
+                     "flex-1 h-12 rounded-lg font-bold text-[10px] uppercase tracking-widest transition-all border-2 active:scale-95",
                      responsavel === name 
                        ? responsavelStyles[name].active 
                        : responsavelStyles[name].inactive
@@ -162,37 +161,13 @@ export function AddTaskForm({ history }: AddTaskFormProps) {
                    key={p}
                    onClick={() => setPriority(p as any)}
                    className={cn(
-                     "flex-1 h-12 rounded-2xl font-bold text-[9px] uppercase tracking-wider transition-all border-2 active:scale-95",
+                     "flex-1 h-12 rounded-lg font-bold text-[9px] uppercase tracking-wider transition-all border-2 active:scale-95",
                      priority === p 
                        ? priorityStyles[p].active 
                        : priorityStyles[p].inactive
                    )}
                  >
                    {p}
-                 </button>
-               ))}
-            </div>
-         </div>
-
-         {/* Complexidade */}
-         <div className="space-y-3">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 px-1 flex items-center gap-2">
-               <Zap className="h-3 w-3" />
-               Complexidade
-            </label>
-            <div className="flex gap-2">
-               {['Baixa', 'Média', 'Alta'].map((c) => (
-                 <button
-                   key={c}
-                   onClick={() => setComplexity(c as any)}
-                   className={cn(
-                     "flex-1 h-12 rounded-2xl font-bold text-[10px] uppercase tracking-widest transition-all border-2 active:scale-95",
-                     complexity === c 
-                       ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20" 
-                       : "bg-card border-transparent text-muted-foreground hover:border-primary/20 hover:bg-background"
-                   )}
-                 >
-                   {c}
                  </button>
                ))}
             </div>
