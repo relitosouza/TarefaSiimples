@@ -49,6 +49,7 @@ export function TaskList({ tasks }: TaskListProps) {
   const [editComplexidade, setEditComplexidade] = useState<'Alta' | 'Média' | 'Baixa'>('Média');
   const [editResponsavel, setEditResponsavel] = useState<'Amanda' | 'Bárbara' | 'Daisy' | ''>('');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isEditingMetadata, setIsEditingMetadata] = useState(false);
   const [activeTab, setActiveTab] = useState<'active' | 'in_progress' | 'completed'>('active');
 
   // Filtros de busca desativados
@@ -120,6 +121,7 @@ export function TaskList({ tasks }: TaskListProps) {
       setEditComplexidade(selectedTask.complexidade || 'Média');
       setEditResponsavel(selectedTask.responsavel || 'Amanda');
       setConfirmDelete(false);
+      setIsEditingMetadata(false);
     }
   }, [selectedTask]);
 
@@ -462,106 +464,175 @@ export function TaskList({ tasks }: TaskListProps) {
               />
             </div>
 
-            {/* Responsável */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/75 px-1">Responsável</label>
-              <div className="grid grid-cols-3 gap-1.5">
-                {(['Amanda', 'Bárbara', 'Daisy'] as const).map((name) => {
-                  const nameColors = {
-                    Amanda: 'bg-purple-500/10 text-purple-500 border-purple-500/20 active:bg-purple-500 active:text-white',
-                    'Bárbara': 'bg-pink-500/10 text-pink-500 border-pink-500/20 active:bg-pink-500 active:text-white',
-                    Daisy: 'bg-amber-500/10 text-amber-500 border-amber-500/20 active:bg-amber-500 active:text-white',
-                  };
-                  
-                  const activeNameColors = {
-                    Amanda: 'bg-purple-500 text-white border-purple-500 shadow-sm',
-                    'Bárbara': 'bg-pink-500 text-white border-pink-500 shadow-sm',
-                    Daisy: 'bg-amber-500 text-white border-amber-500 shadow-sm',
-                  };
-
-                  const isSelected = editResponsavel === name;
-
-                  return (
-                    <button
-                      key={name}
-                      type="button"
-                      onClick={() => setEditResponsavel(name)}
-                      className={cn(
-                        "py-2.5 rounded-xl text-xs font-black uppercase tracking-wider border transition-all active:scale-95 shrink-0",
-                        isSelected ? activeNameColors[name] : nameColors[name]
-                      )}
-                    >
-                      {name}
-                    </button>
-                  );
-                })}
-              </div>
+            {/* Cabeçalho da Seção de Detalhes com Botão de Alternância */}
+            <div className="flex items-center justify-between px-1">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/75">Detalhes da Tarefa</span>
+              <button 
+                type="button"
+                onClick={() => setIsEditingMetadata(!isEditingMetadata)}
+                className="text-[10px] font-black uppercase tracking-[0.15em] text-primary hover:text-primary/80 transition-colors bg-primary/5 border border-primary/10 px-2.5 py-1.5 rounded-md active:scale-95 shrink-0"
+              >
+                {isEditingMetadata ? 'Concluir Edição' : 'Editar Detalhes'}
+              </button>
             </div>
 
-            {/* Prioridade */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/75 px-1">Prioridade</label>
-              <div className="grid grid-cols-4 gap-1.5">
-                {(['Urgente', 'Alta', 'Média', 'Baixa'] as const).map((prio) => {
-                  const prioColors = {
-                    Urgente: 'bg-red-500/10 text-red-500 border-red-500/20 active:bg-red-500 active:text-white',
-                    Alta: 'bg-orange-500/10 text-orange-500 border-orange-500/20 active:bg-orange-500 active:text-white',
-                    Média: 'bg-blue-500/10 text-blue-500 border-blue-500/20 active:bg-blue-500 active:text-white',
-                    Baixa: 'bg-slate-500/10 text-slate-500 border-slate-500/20 active:bg-slate-500 active:text-white',
-                  };
-                  
-                  const activePrioColors = {
-                    Urgente: 'bg-red-500 text-white border-red-500 shadow-sm',
-                    Alta: 'bg-orange-500 text-white border-orange-500 shadow-sm',
-                    Média: 'bg-blue-500 text-white border-blue-500 shadow-sm',
-                    Baixa: 'bg-slate-500 text-white border-slate-500 shadow-sm',
-                  };
+            {isEditingMetadata ? (
+              /* MODO EDIÇÃO (Controles interativos) */
+              <div className="space-y-4 bg-muted/20 p-4 rounded-xl border border-primary/5 animate-in fade-in slide-in-from-top-1">
+                {/* Responsável */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/60 px-1">Responsável</label>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {(['Amanda', 'Bárbara', 'Daisy'] as const).map((name) => {
+                      const nameColors = {
+                        Amanda: 'bg-purple-500/10 text-purple-500 border-purple-500/20 active:bg-purple-500 active:text-white',
+                        'Bárbara': 'bg-pink-500/10 text-pink-500 border-pink-500/20 active:bg-pink-500 active:text-white',
+                        Daisy: 'bg-amber-500/10 text-amber-500 border-amber-500/20 active:bg-amber-500 active:text-white',
+                      };
+                      
+                      const activeNameColors = {
+                        Amanda: 'bg-purple-500 text-white border-purple-500 shadow-sm',
+                        'Bárbara': 'bg-pink-500 text-white border-pink-500 shadow-sm',
+                        Daisy: 'bg-amber-500 text-white border-amber-500 shadow-sm',
+                      };
 
-                  const isSelected = editPrioridade === prio;
+                      const isSelected = editResponsavel === name;
 
-                  return (
-                    <button
-                      key={prio}
-                      type="button"
-                      onClick={() => setEditPrioridade(prio)}
-                      className={cn(
-                        "py-2.5 rounded-xl text-xs font-black uppercase tracking-wider border transition-all active:scale-95 shrink-0",
-                        isSelected ? activePrioColors[prio] : prioColors[prio]
-                      )}
-                    >
-                      {prio}
-                    </button>
-                  );
-                })}
+                      return (
+                        <button
+                          key={name}
+                          type="button"
+                          onClick={() => setEditResponsavel(name)}
+                          className={cn(
+                            "py-2 rounded-xl text-xs font-black uppercase tracking-wider border transition-all active:scale-95 shrink-0",
+                            isSelected ? activeNameColors[name] : nameColors[name]
+                          )}
+                        >
+                          {name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Prioridade */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/60 px-1">Prioridade</label>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {(['Urgente', 'Alta', 'Média', 'Baixa'] as const).map((prio) => {
+                      const prioColors = {
+                        Urgente: 'bg-red-500/10 text-red-500 border-red-500/20 active:bg-red-500 active:text-white',
+                        Alta: 'bg-orange-500/10 text-orange-500 border-orange-500/20 active:bg-orange-500 active:text-white',
+                        Média: 'bg-blue-500/10 text-blue-500 border-blue-500/20 active:bg-blue-500 active:text-white',
+                        Baixa: 'bg-slate-500/10 text-slate-500 border-slate-500/20 active:bg-slate-500 active:text-white',
+                      };
+                      
+                      const activePrioColors = {
+                        Urgente: 'bg-red-500 text-white border-red-500 shadow-sm',
+                        Alta: 'bg-orange-500 text-white border-orange-500 shadow-sm',
+                        Média: 'bg-blue-500 text-white border-blue-500 shadow-sm',
+                        Baixa: 'bg-slate-500 text-white border-slate-500 shadow-sm',
+                      };
+
+                      const isSelected = editPrioridade === prio;
+
+                      return (
+                        <button
+                          key={prio}
+                          type="button"
+                          onClick={() => setEditPrioridade(prio)}
+                          className={cn(
+                            "py-2 rounded-xl text-xs font-black uppercase tracking-wider border transition-all active:scale-95 shrink-0",
+                            isSelected ? activePrioColors[prio] : prioColors[prio]
+                          )}
+                        >
+                          {prio}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Status Selection */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/60 px-1">Status do Progresso</label>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {[
+                      { id: 'Pendente', icon: Clock, activeColor: 'bg-slate-500 text-white border-slate-500 shadow-sm', normalColor: 'bg-slate-500/10 text-slate-600 hover:bg-slate-500/20 border-slate-500/20', label: 'Pendente' },
+                      { id: 'Parcial', icon: Timer, activeColor: 'bg-orange-500 text-white border-orange-500 shadow-sm', normalColor: 'bg-orange-500/10 text-orange-600 hover:bg-orange-500/20 border-orange-500/20', label: 'Parcial' },
+                      { id: 'Concluída', icon: CheckCircle2, activeColor: 'bg-green-500 text-white border-green-500 shadow-sm', normalColor: 'bg-green-500/10 text-green-600 hover:bg-green-500/20 border-green-500/20', label: 'Concluída' },
+                    ].map((status) => {
+                      const isSelected = tempStatus === status.id;
+                      return (
+                        <button
+                          key={status.id}
+                          type="button"
+                          onClick={() => setTempStatus(status.id as TaskStatus)}
+                          className={cn(
+                            "flex flex-col items-center justify-center py-2.5 rounded-xl border text-xs font-black uppercase tracking-wider transition-all active:scale-95 shrink-0 gap-1",
+                            isSelected ? status.activeColor : status.normalColor
+                          )}
+                        >
+                          <status.icon className="h-4 w-4 shrink-0" />
+                          {status.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
-            </div>
-            {/* Status Selection */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/75 px-1">Status do Progresso</label>
-              <div className="grid grid-cols-3 gap-1.5">
-                {[
-                  { id: 'Pendente', icon: Clock, activeColor: 'bg-slate-500 text-white border-slate-500 shadow-sm', normalColor: 'bg-slate-500/10 text-slate-600 hover:bg-slate-500/20 border-slate-500/20', label: 'Pendente' },
-                  { id: 'Parcial', icon: Timer, activeColor: 'bg-orange-500 text-white border-orange-500 shadow-sm', normalColor: 'bg-orange-500/10 text-orange-600 hover:bg-orange-500/20 border-orange-500/20', label: 'Parcial' },
-                  { id: 'Concluída', icon: CheckCircle2, activeColor: 'bg-green-500 text-white border-green-500 shadow-sm', normalColor: 'bg-green-500/10 text-green-600 hover:bg-green-500/20 border-green-500/20', label: 'Concluída' },
-                ].map((status) => {
-                  const isSelected = tempStatus === status.id;
-                  return (
-                    <button
-                      key={status.id}
-                      type="button"
-                      onClick={() => setTempStatus(status.id as TaskStatus)}
-                      className={cn(
-                        "flex flex-col items-center justify-center py-3 rounded-xl border text-xs font-black uppercase tracking-wider transition-all active:scale-95 shrink-0 gap-1",
-                        isSelected ? status.activeColor : status.normalColor
-                      )}
-                    >
-                      <status.icon className="h-4 w-4 shrink-0" />
-                      {status.label}
-                    </button>
-                  );
-                })}
+            ) : (
+              /* MODO LEITURA (Metadata Informativo) */
+              <div className="grid grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl border border-primary/5">
+                {/* Responsável */}
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/60 block">Responsável</span>
+                  {editResponsavel ? (
+                    <span className={cn(
+                      "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider border",
+                      editResponsavel === 'Amanda' && "bg-purple-500/10 text-purple-600 border-purple-500/10 dark:bg-purple-500/20 dark:text-purple-400",
+                      editResponsavel === 'Bárbara' && "bg-pink-500/10 text-pink-600 border-pink-500/10 dark:bg-pink-500/20 dark:text-pink-400",
+                      editResponsavel === 'Daisy' && "bg-amber-500/10 text-amber-600 border-amber-500/10 dark:bg-amber-500/20 dark:text-amber-400"
+                    )}>
+                      <User className="h-3 w-3 shrink-0" />
+                      {editResponsavel}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-muted-foreground/40 font-bold uppercase tracking-wider">Não atribuído</span>
+                  )}
+                </div>
+
+                {/* Prioridade */}
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/60 block">Prioridade</span>
+                  <span className={cn(
+                    "inline-flex px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider border",
+                    editPrioridade === 'Urgente' && "bg-red-500/10 text-red-500 border-red-500/10 dark:bg-red-500/20",
+                    editPrioridade === 'Alta' && "bg-orange-500/10 text-orange-500 border-orange-500/10 dark:bg-orange-500/20",
+                    editPrioridade === 'Média' && "bg-blue-500/10 text-blue-500 border-blue-500/10 dark:bg-blue-500/20",
+                    editPrioridade === 'Baixa' && "bg-slate-500/10 text-slate-500 border-slate-500/10 dark:bg-slate-500/20"
+                  )}>
+                    {editPrioridade}
+                  </span>
+                </div>
+
+                {/* Status */}
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/60 block">Status</span>
+                  <span className={cn(
+                    "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider border",
+                    tempStatus === 'Pendente' && "bg-slate-500/10 text-slate-600 border-slate-500/10 dark:bg-slate-500/20 dark:text-slate-400",
+                    tempStatus === 'Parcial' && "bg-orange-500/10 text-orange-600 border-orange-500/10 dark:bg-orange-500/20 dark:text-orange-400",
+                    tempStatus === 'Concluída' && "bg-green-500/10 text-green-600 border-green-500/10 dark:bg-green-500/20 dark:text-green-400"
+                  )}>
+                    {tempStatus === 'Pendente' && <Clock className="h-3 w-3 shrink-0" />}
+                    {tempStatus === 'Parcial' && <Timer className="h-3 w-3 shrink-0" />}
+                    {tempStatus === 'Concluída' && <CheckCircle2 className="h-3 w-3 shrink-0" />}
+                    {tempStatus}
+                  </span>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Comentário */}
             {(tempStatus === 'Parcial' || comment) && (
