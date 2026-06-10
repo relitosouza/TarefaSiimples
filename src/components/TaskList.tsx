@@ -49,7 +49,7 @@ export function TaskList({ tasks }: TaskListProps) {
   const [editComplexidade, setEditComplexidade] = useState<'Alta' | 'Média' | 'Baixa'>('Média');
   const [editResponsavel, setEditResponsavel] = useState<'Amanda' | 'Bárbara' | 'Daisy' | ''>('');
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [activeTab, setActiveTab] = useState<'active' | 'completed'>('active');
+  const [activeTab, setActiveTab] = useState<'active' | 'in_progress' | 'completed'>('active');
 
   // Filtros de busca desativados
 
@@ -61,8 +61,21 @@ export function TaskList({ tasks }: TaskListProps) {
     'Baixa': 1
   };
 
-  // Separação de Ativas vs Concluídas a partir das tarefas reais
-  const activeTasks = tasks.filter(t => t.status !== 'Concluída').sort((a, b) => {
+  // Separação de Ativas, Em Progresso e Concluídas a partir das tarefas reais
+  const pendingTasks = tasks.filter(t => t.status === 'Pendente').sort((a, b) => {
+    // Ordenar por prioridade (Maior peso primeiro)
+    const aWeight = priorityWeights[a.prioridade || 'Média'] || 2;
+    const bWeight = priorityWeights[b.prioridade || 'Média'] || 2;
+    if (aWeight !== bWeight) {
+      return bWeight - aWeight;
+    }
+    // Ordenar por data de criação (Mais recente primeiro)
+    const aTime = a.data_criacao ? new Date(a.data_criacao).getTime() : 0;
+    const bTime = b.data_criacao ? new Date(b.data_criacao).getTime() : 0;
+    return bTime - aTime;
+  });
+
+  const inProgressTasks = tasks.filter(t => t.status === 'Parcial').sort((a, b) => {
     // Ordenar por prioridade (Maior peso primeiro)
     const aWeight = priorityWeights[a.prioridade || 'Média'] || 2;
     const bWeight = priorityWeights[b.prioridade || 'Média'] || 2;
@@ -297,11 +310,11 @@ export function TaskList({ tasks }: TaskListProps) {
       {/* Conteúdo Principal */}
       <div className="space-y-6">
         {/* Tabs com visual premium */}
-        <div className="flex bg-muted/40 p-1.5 rounded-2xl border max-w-md mx-auto mb-2">
+        <div className="flex bg-muted/40 p-1.5 rounded-xl border w-full mb-6">
           <button
             onClick={() => setActiveTab('active')}
             className={cn(
-              "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm uppercase tracking-wider transition-all",
+              "flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-bold text-xs md:text-sm uppercase tracking-wider transition-all whitespace-nowrap",
               activeTab === 'active' 
                 ? "bg-background text-foreground shadow-sm border border-border/50" 
                 : "text-muted-foreground/60 hover:text-foreground"
@@ -309,16 +322,33 @@ export function TaskList({ tasks }: TaskListProps) {
           >
             <Clock className="h-4 w-4 shrink-0" />
             Ativas
-            {activeTasks.length > 0 && (
+            {pendingTasks.length > 0 && (
               <span className="ml-1.5 bg-primary/15 text-primary px-2 py-0.5 rounded-full text-xs font-black">
-                {activeTasks.length}
+                {pendingTasks.length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('in_progress')}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-bold text-xs md:text-sm uppercase tracking-wider transition-all whitespace-nowrap",
+              activeTab === 'in_progress' 
+                ? "bg-background text-orange-500 shadow-sm border border-border/50" 
+                : "text-muted-foreground/60 hover:text-foreground"
+            )}
+          >
+            <Timer className="h-4 w-4 shrink-0" />
+            Em Progresso
+            {inProgressTasks.length > 0 && (
+              <span className="ml-1.5 bg-orange-500/10 text-orange-500 px-2 py-0.5 rounded-full text-xs font-black">
+                {inProgressTasks.length}
               </span>
             )}
           </button>
           <button
             onClick={() => setActiveTab('completed')}
             className={cn(
-              "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm uppercase tracking-wider transition-all",
+              "flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-bold text-xs md:text-sm uppercase tracking-wider transition-all whitespace-nowrap",
               activeTab === 'completed' 
                 ? "bg-background text-green-500 shadow-sm border border-border/50" 
                 : "text-muted-foreground/60 hover:text-foreground"
@@ -336,20 +366,37 @@ export function TaskList({ tasks }: TaskListProps) {
 
         {/* Conteúdo das abas */}
         <div className="space-y-4" role="list" aria-label="Lista de Tarefas">
-          {activeTab === 'active' ? (
+          {activeTab === 'active' && (
             /* Aba: Ativas */
-            activeTasks.length === 0 ? (
+            pendingTasks.length === 0 ? (
               <div className="text-center py-16 border-2 border-dashed rounded-2xl opacity-50 flex flex-col items-center">
                 <Sparkles className="h-10 w-10 text-primary mb-3" />
                 <h3 className="text-lg font-bold mb-1">Nenhuma Tarefa Ativa!</h3>
                 <p className="text-xs font-medium max-w-xs mx-auto">
-                  Parabéns! Todas as tarefas marcadas como ativas foram concluídas.
+                  Você não tem nenhuma tarefa pendente no momento.
                 </p>
               </div>
             ) : (
-              activeTasks.map((task) => renderTaskCard(task))
+              pendingTasks.map((task) => renderTaskCard(task))
             )
-          ) : (
+          )}
+
+          {activeTab === 'in_progress' && (
+            /* Aba: Em Progresso */
+            inProgressTasks.length === 0 ? (
+              <div className="text-center py-16 border-2 border-dashed rounded-2xl opacity-50 flex flex-col items-center">
+                <Timer className="h-10 w-10 text-orange-500 mb-3" />
+                <h3 className="text-lg font-bold mb-1">Nenhuma em Progresso!</h3>
+                <p className="text-xs font-medium max-w-xs mx-auto">
+                  Nenhuma tarefa está marcada como em progresso no momento.
+                </p>
+              </div>
+            ) : (
+              inProgressTasks.map((task) => renderTaskCard(task))
+            )
+          )}
+
+          {activeTab === 'completed' && (
             /* Aba: Concluídas (Separadas por Data) */
             completedTasks.length === 0 ? (
               <div className="text-center py-16 border-2 border-dashed rounded-2xl opacity-50 flex flex-col items-center">
