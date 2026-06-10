@@ -3,7 +3,6 @@
 import { addTask } from '@/actions/tasks';
 import { useState, useTransition, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Plus, Search, Zap, ShieldAlert, User, Mic, MicOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -21,6 +20,24 @@ export function AddTaskForm({ history }: AddTaskFormProps) {
   const [isListening, setIsListening] = useState(false);
   const [voiceSupported, setVoiceSupported] = useState(false);
   const recognitionRef = useRef<any>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize handler for textarea
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+  }, [query]);
+
+  // Submit on Enter, new line on Shift+Enter
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(query);
+    }
+  };
 
   // Estilos de cores para as prioridades combinando com os badges
   const priorityStyles: Record<string, { active: string; inactive: string }> = {
@@ -116,20 +133,23 @@ export function AddTaskForm({ history }: AddTaskFormProps) {
     <div className="relative w-full space-y-6">
       {/* Input de Tarefa */}
       <div className="relative group">
-        <div className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
+        <div className="absolute left-6 top-5 md:top-7 text-muted-foreground group-focus-within:text-primary transition-colors">
           <Plus className="h-6 w-6" />
         </div>
-        <Input
+        <textarea
+          ref={textareaRef}
+          rows={1}
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
             setShowSuggestions(true);
           }}
           onFocus={() => setShowSuggestions(true)}
+          onKeyDown={handleKeyDown}
           placeholder="O que vamos realizar hoje?"
-          className="h-16 md:h-20 pl-16 pr-32 rounded-[2rem] border-none bg-card/80 backdrop-blur-xl shadow-2xl shadow-primary/5 text-lg md:text-xl font-bold placeholder:text-muted-foreground/40 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
+          className="w-full min-h-[4rem] md:min-h-[5rem] pl-16 pr-28 md:pr-56 py-4 md:py-6 rounded-[2rem] border-none bg-card/80 backdrop-blur-xl shadow-2xl shadow-primary/5 text-lg md:text-xl font-bold placeholder:text-muted-foreground/40 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all resize-none overflow-hidden"
         />
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+        <div className="absolute right-3 top-3 md:top-4 flex items-center gap-2">
           {voiceSupported && (
             <button
               type="button"

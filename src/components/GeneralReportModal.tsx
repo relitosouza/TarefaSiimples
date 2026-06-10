@@ -8,7 +8,6 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -601,14 +600,6 @@ export function GeneralReportModal({ tasks }: GeneralReportModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button
-        className="fixed bottom-6 right-6 h-14 md:h-16 px-6 md:px-8 rounded-full shadow-2xl shadow-primary/40 animate-bounce hover:animate-none group z-40 transition-transform active:scale-95 flex items-center gap-2"
-        aria-label="Abrir Relatório Geral"
-      />}>
-        <ClipboardList className="h-5 w-5 md:h-6 md:w-6 transition-transform group-hover:rotate-12" />
-        <span className="font-black text-xs md:text-sm uppercase tracking-widest">Relatório Geral</span>
-      </DialogTrigger>
-
       <DialogContent
         className="sm:max-w-3xl rounded-xl p-0 overflow-hidden border-none shadow-3xl overscroll-behavior-contain flex flex-col h-[90vh] max-h-[850px]"
         aria-describedby="general-report-description"
